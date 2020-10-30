@@ -1,3 +1,6 @@
+mod board_state;
+use board_state::BoardState;
+
 use ggez::{
     event::{self, EventHandler},
     graphics, Context, ContextBuilder, GameResult,
@@ -12,17 +15,23 @@ fn main() {
 
     let mut my_game = ChessGame::new(&mut ctx);
 
+    println!("{:?}", my_game.board_state);
+
     match event::run(&mut ctx, &mut event_loop, &mut my_game) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
     }
 }
 
-struct ChessGame {}
+struct ChessGame {
+    board_state: BoardState,
+}
 
 impl ChessGame {
     pub fn new(_ctx: &mut Context) -> ChessGame {
-        ChessGame {}
+        ChessGame {
+            board_state: Default::default(),
+        }
     }
 }
 
