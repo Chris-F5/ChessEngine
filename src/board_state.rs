@@ -13,6 +13,7 @@ impl BoardPosition {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum PieceColor {
     White,
     Black,
@@ -27,6 +28,7 @@ impl string::ToString for PieceColor {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum PieceType {
     Pawn { en_passant: bool },
     Bishop,
@@ -52,6 +54,7 @@ impl string::ToString for PieceType {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: PieceColor,
