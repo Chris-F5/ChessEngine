@@ -1,4 +1,5 @@
 mod board_state;
+mod possible_move_iter;
 mod resource_loader;
 
 pub use board_state::{BoardPosition, BoardState, Piece, PieceColor, PieceType};

@@ -3,8 +3,8 @@ use std::string;
 
 #[derive(Copy, Clone)]
 pub struct BoardPosition {
-    x: u8,
-    y: u8,
+    pub x: u8,
+    pub y: u8,
 }
 
 impl BoardPosition {
@@ -13,7 +13,7 @@ impl BoardPosition {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum PieceColor {
     White,
     Black,
