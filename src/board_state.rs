@@ -1,7 +1,7 @@
 use std::fmt;
 use std::string;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct BoardPosition {
     pub x: u8,
     pub y: u8,
@@ -10,6 +10,9 @@ pub struct BoardPosition {
 impl BoardPosition {
     pub fn new(x: u8, y: u8) -> Self {
         BoardPosition { x: x, y: y }
+    }
+    pub fn is_valid(&self) -> bool {
+        self.x <= 7 && self.y <= 7
     }
 }
 
