@@ -1,7 +1,7 @@
 use crate::{BoardPosition, BoardState, Piece, PieceColor, PieceType};
 
 #[derive(Copy, Clone)]
-enum MoveType {
+pub enum MoveType {
     // A move where one piece moves to another position on the board
     // without changing its type.
     SimpleMove {
@@ -30,15 +30,32 @@ impl PossibleMove {
     pub fn play_move(&self, board_state: &mut BoardState) {
         // TODO: impl function
     }
+    pub fn get_move_type(&self) -> MoveType {
+        self.move_type
+    }
 }
 
 pub struct PossibleMoveIter {
+    index: usize,
     possible_moves: Vec<PossibleMove>,
+}
+
+impl Iterator for PossibleMoveIter {
+    type Item = PossibleMove;
+    fn next(&mut self) -> Option<PossibleMove> {
+        if self.index >= self.possible_moves.len() {
+            None
+        } else {
+            self.index += 1;
+            Some(self.possible_moves[self.index - 1])
+        }
+    }
 }
 
 impl PossibleMoveIter {
     pub fn find_possible_moves(board_state: &BoardState, color: PieceColor) -> PossibleMoveIter {
         let mut new = PossibleMoveIter {
+            index: 0,
             possible_moves: Vec::with_capacity(50),
         };
         new.populate(board_state, color);
@@ -68,16 +85,16 @@ impl PossibleMoveIter {
             )
         };
         let selected_piece = board_state.get(board_position);
+        let y_dir = if only_for_color == PieceColor::White {
+            -1
+        } else {
+            1
+        };
         match selected_piece {
             Some(selected_piece) => {
                 if selected_piece.color == only_for_color {
                     match selected_piece.piece_type {
                         PieceType::Pawn { en_passant } => {
-                            let mut y_dir = if selected_piece.color == PieceColor::White {
-                                1
-                            } else {
-                                -1
-                            };
                             let forward_one_position = ofset_board_pos(0, y_dir);
                             if board_state.get(forward_one_position).is_none() {
                                 self.push(PossibleMove {

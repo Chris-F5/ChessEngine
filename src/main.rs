@@ -4,6 +4,7 @@ mod possible_move_iter;
 mod resource_loader;
 
 pub use board_state::{BoardPosition, BoardState, Piece, PieceColor, PieceType};
+pub use possible_move_iter::{MoveType, PossibleMove, PossibleMoveIter};
 
 use ggez::{
     event::{self, EventHandler, MouseButton},

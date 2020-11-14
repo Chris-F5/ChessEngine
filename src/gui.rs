@@ -1,4 +1,7 @@
-use crate::{BoardPosition, BoardState, Piece, PieceColor, PieceSetImages};
+use crate::{
+    BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages, PossibleMove,
+    PossibleMoveIter,
+};
 use ggez::{
     graphics,
     nalgebra::{Point2, Vector2},
@@ -48,6 +51,7 @@ pub struct GUIState {
     white_piece_images: PieceSetImages,
     black_piece_images: PieceSetImages,
     board_image: graphics::Image,
+    possible_moves_from_selection: Vec<PossiblePlayerMove>,
 }
 impl GUIState {
     pub fn new(
@@ -61,6 +65,7 @@ impl GUIState {
             white_piece_images,
             black_piece_images,
             board_image,
+            possible_moves_from_selection: Vec::with_capacity(20),
         }
     }
 
@@ -136,6 +141,10 @@ impl GUIState {
         if let Sellection::Selected(pos) = self.sellection {
             highlight_square(pos);
         }
+        for possible_move in self.possible_moves_from_selection.iter() {
+            highlight_square(possible_move.to);
+        }
+
         if drawn_a_square {
             let mesh = highlight_mesh.build(ctx).unwrap();
             graphics::draw(ctx, &mesh, graphics::DrawParam::new()).unwrap();
@@ -146,19 +155,81 @@ impl GUIState {
         if let Some(board_pos) = board_pos {
             if let Sellection::Selected(selection) = self.sellection {
                 if selection == board_pos {
-                    self.sellection = Sellection::None;
+                    self.deselect();
                 } else {
                     // TODO: try move sellection to this position
                 }
             } else {
                 if let Some(piece) = self.board_state.get(board_pos) {
                     if piece.color == PieceColor::White {
-                        self.sellection = Sellection::Selected(board_pos);
+                        self.select(board_pos);
                     }
                 }
             }
         } else {
-            self.sellection = Sellection::None;
+            self.deselect();
+        }
+    }
+    fn select(&mut self, pos: BoardPosition) {
+        self.sellection = Sellection::Selected(pos);
+
+        let all_possible_moves =
+            PossibleMoveIter::find_possible_moves(&self.board_state, PieceColor::White);
+        for possible_move in all_possible_moves {
+            let player_possible_move = PossiblePlayerMove::from(possible_move);
+            if player_possible_move.from == pos {
+                self.possible_moves_from_selection
+                    .push(player_possible_move);
+            }
+        }
+    }
+    fn deselect(&mut self) {
+        self.sellection = Sellection::None;
+        self.possible_moves_from_selection.clear();
+    }
+}
+
+struct PossiblePlayerMove {
+    this_move: PossibleMove,
+    // the "to" and "from" are the squares that you have to click on to make the piece move
+    from: BoardPosition,
+    to: BoardPosition,
+}
+
+impl PossiblePlayerMove {
+    pub fn from(the_move: PossibleMove) -> PossiblePlayerMove {
+        PossiblePlayerMove {
+            this_move: the_move,
+            from: PossiblePlayerMove::find_from(the_move.get_move_type()),
+            to: PossiblePlayerMove::find_to(the_move.get_move_type()),
+        }
+    }
+    fn find_from(move_type: MoveType) -> BoardPosition {
+        match move_type {
+            MoveType::SimpleMove { from, to: _ } => from,
+            MoveType::ChangeMove {
+                from,
+                to: _,
+                new_piece: _,
+            } => from,
+            MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
+        }
+    }
+    fn find_to(move_type: MoveType) -> BoardPosition {
+        match move_type {
+            MoveType::SimpleMove { from: _, to } => to,
+            MoveType::ChangeMove {
+                from: _,
+                to,
+                new_piece: _,
+            } => to,
+            MoveType::Castling { kings_side } => {
+                if kings_side {
+                    BoardPosition::new(7, 0)
+                } else {
+                    BoardPosition::new(0, 0)
+                }
+            }
         }
     }
 }
