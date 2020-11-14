@@ -1,17 +1,17 @@
-mod board_drawer;
 mod board_state;
+mod gui;
 mod possible_move_iter;
 mod resource_loader;
 
 pub use board_state::{BoardPosition, BoardState, Piece, PieceColor, PieceType};
 
-use board_drawer::GUIState;
 use ggez::{
     event::{self, EventHandler, MouseButton},
     graphics,
     nalgebra::{Point2, Vector2},
     Context, ContextBuilder, GameResult,
 };
+use gui::GUIState;
 use resource_loader::PieceSetImages;
 use std::{env, path};
 
@@ -42,7 +42,7 @@ fn main() {
 }
 
 struct ChessGame {
-    gui_state: board_drawer::GUIState,
+    gui_state: GUIState,
 }
 
 impl ChessGame {
