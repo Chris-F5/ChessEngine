@@ -151,7 +151,11 @@ impl GUIState {
                     // TODO: try move sellection to this position
                 }
             } else {
-                self.sellection = Sellection::Selected(board_pos);
+                if let Some(piece) = self.board_state.get(board_pos) {
+                    if piece.color == PieceColor::White {
+                        self.sellection = Sellection::Selected(board_pos);
+                    }
+                }
             }
         } else {
             self.sellection = Sellection::None;
