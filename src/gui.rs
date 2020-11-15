@@ -156,8 +156,8 @@ impl GUIState {
             if let Sellection::Selected(selection) = self.sellection {
                 if selection == board_pos {
                     self.deselect();
-                } else {
-                    // TODO: try move sellection to this position
+                } else if self.try_move_to(board_pos) {
+                    self.deselect();
                 }
             } else {
                 if let Some(piece) = self.board_state.get(board_pos) {
@@ -182,6 +182,15 @@ impl GUIState {
                     .push(player_possible_move);
             }
         }
+    }
+    fn try_move_to(&mut self, pos: BoardPosition) -> bool {
+        for possible_move in self.possible_moves_from_selection.iter() {
+            if possible_move.to == pos {
+                possible_move.this_move.play_move(&mut self.board_state);
+                return true;
+            }
+        }
+        false
     }
     fn deselect(&mut self) {
         self.sellection = Sellection::None;

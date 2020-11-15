@@ -28,7 +28,24 @@ pub struct PossibleMove {
 
 impl PossibleMove {
     pub fn play_move(&self, board_state: &mut BoardState) {
-        // TODO: impl function
+        match self.move_type {
+            MoveType::SimpleMove { from, to } => {
+                let from_piece = *board_state.get(from);
+                if let Some(from_piece) = from_piece {
+                    let to_piece = board_state.get_mut(to);
+                    *to_piece = Some(from_piece);
+                    *board_state.get_mut(from) = None;
+                } else {
+                    panic!("cant move from an empty space");
+                }
+            }
+            MoveType::ChangeMove {
+                from,
+                to,
+                new_piece,
+            } => (),
+            MoveType::Castling { kings_side } => (),
+        }
     }
     pub fn get_move_type(&self) -> MoveType {
         self.move_type
