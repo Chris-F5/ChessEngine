@@ -26,7 +26,7 @@ fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
     if x > 0.0 && y > 0.0 {
         let board_pos = BoardPosition::new(
             (x / BOARD_POS_SIZE as f32) as u8,
-            (y / BOARD_POS_SIZE as f32) as u8,
+            7 - (y / BOARD_POS_SIZE as f32) as u8,
         );
         if board_pos.is_valid() {
             Some(board_pos)
@@ -41,7 +41,7 @@ fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
 fn board_pos_to_screen_space(board_pos: BoardPosition) -> (f32, f32) {
     (
         board_pos.x as f32 * BOARD_POS_SIZE + BOARD_X_OFSET,
-        board_pos.y as f32 * BOARD_POS_SIZE + BOARD_Y_OFSET,
+        (7 - board_pos.y) as f32 * BOARD_POS_SIZE + BOARD_Y_OFSET,
     )
 }
 
@@ -158,6 +158,7 @@ impl GUIState {
                     self.deselect();
                 } else if self.try_move_to(board_pos) {
                     self.deselect();
+                    println!("{:?}", self.board_state);
                 }
             } else {
                 if let Some(piece) = self.board_state.get(board_pos) {
@@ -174,7 +175,7 @@ impl GUIState {
         self.sellection = Sellection::Selected(pos);
 
         let all_possible_moves =
-            PossibleMoveIter::find_possible_moves(&self.board_state, PieceColor::White);
+            PossibleMoveIter::find_possible_moves(&mut self.board_state, PieceColor::White);
         for possible_move in all_possible_moves {
             let player_possible_move = PossiblePlayerMove::from(possible_move);
             if player_possible_move.from == pos {
@@ -215,22 +216,20 @@ impl PossiblePlayerMove {
     }
     fn find_from(move_type: MoveType) -> BoardPosition {
         match move_type {
-            MoveType::SimpleMove { from, to: _ } => from,
-            MoveType::ChangeMove {
+            MoveType::SimpleMove {
                 from,
                 to: _,
-                new_piece: _,
+                piece: _,
             } => from,
             MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
         }
     }
     fn find_to(move_type: MoveType) -> BoardPosition {
         match move_type {
-            MoveType::SimpleMove { from: _, to } => to,
-            MoveType::ChangeMove {
+            MoveType::SimpleMove {
                 from: _,
                 to,
-                new_piece: _,
+                piece: _,
             } => to,
             MoveType::Castling { kings_side } => {
                 if kings_side {

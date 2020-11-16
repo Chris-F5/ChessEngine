@@ -71,6 +71,7 @@ impl string::ToString for Piece {
     }
 }
 
+#[derive(Clone)]
 pub struct BoardState {
     pieces: [[Option<Piece>; 8]; 8],
 }
@@ -88,7 +89,8 @@ impl fmt::Debug for BoardState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut board_string = String::new();
 
-        for y in 0..8 {
+        for real_y in 0..8 {
+            let y = 7 - real_y;
             for x in 0..8 {
                 let piece = self.get(BoardPosition::new(x, y));
                 match piece {
@@ -99,7 +101,7 @@ impl fmt::Debug for BoardState {
                     board_string.push(' ');
                 }
             }
-            if y != 7 {
+            if real_y != 7 {
                 board_string.push('\n');
             }
         }
@@ -116,112 +118,6 @@ impl Default for BoardState {
                     [
                         Some(Piece {
                             piece_type: PieceType::Rook { moved: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Queen,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::King { moved: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
-                            color: PieceColor::Black,
-                        }),
-                    ],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::Black,
-                        }),
-                    ],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                    ],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
                             color: PieceColor::White,
                         }),
                         Some(Piece {
@@ -251,6 +147,112 @@ impl Default for BoardState {
                         Some(Piece {
                             piece_type: PieceType::Rook { moved: false },
                             color: PieceColor::White,
+                        }),
+                    ],
+                    [
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                    ],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::Black,
+                        }),
+                    ],
+                    [
+                        Some(Piece {
+                            piece_type: PieceType::Rook { moved: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Knight,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Bishop,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Queen,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::King { moved: false },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Bishop,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Knight,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Rook { moved: false },
+                            color: PieceColor::Black,
                         }),
                     ],
                 ]
