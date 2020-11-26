@@ -22,6 +22,15 @@ pub enum PieceColor {
     Black,
 }
 
+impl PieceColor {
+    pub fn opposite_color(&self) -> PieceColor {
+        match self {
+            PieceColor::White => PieceColor::Black,
+            PieceColor::Black => PieceColor::White,
+        }
+    }
+}
+
 impl string::ToString for PieceColor {
     fn to_string(&self) -> String {
         match self {
@@ -31,7 +40,7 @@ impl string::ToString for PieceColor {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum PieceType {
     Pawn { en_passant: bool },
     Bishop,
@@ -61,6 +70,12 @@ impl string::ToString for PieceType {
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: PieceColor,
+}
+
+impl Piece {
+    pub fn new(color: PieceColor, piece_type: PieceType) -> Piece {
+        Piece { color, piece_type }
+    }
 }
 
 impl string::ToString for Piece {
@@ -185,7 +200,25 @@ impl Default for BoardState {
                     ],
                     [None, None, None, None, None, None, None, None],
                     [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
+                    [
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: true },
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: false },
+                            color: PieceColor::White,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Pawn { en_passant: true },
+                            color: PieceColor::Black,
+                        }),
+                    ],
                     [None, None, None, None, None, None, None, None],
                     [
                         Some(Piece {

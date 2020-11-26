@@ -26,10 +26,11 @@ fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
     if x > 0.0 && y > 0.0 {
         let board_pos = BoardPosition::new(
             (x / BOARD_POS_SIZE as f32) as u8,
-            7 - (y / BOARD_POS_SIZE as f32) as u8,
+            (y / BOARD_POS_SIZE as f32) as u8,
         );
         if board_pos.is_valid() {
-            Some(board_pos)
+            let inverted_board_pos = BoardPosition::new(board_pos.x, 7 - board_pos.y);
+            Some(inverted_board_pos)
         } else {
             None
         }
@@ -221,7 +222,15 @@ impl PossiblePlayerMove {
                 to: _,
                 piece: _,
             } => from,
-            MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
+            MoveType::Castling {
+                color: _,
+                kings_side: _,
+            } => BoardPosition::new(4, 0),
+            MoveType::EnPassant {
+                from,
+                to: _,
+                color: _,
+            } => from,
         }
     }
     fn find_to(move_type: MoveType) -> BoardPosition {
@@ -231,13 +240,21 @@ impl PossiblePlayerMove {
                 to,
                 piece: _,
             } => to,
-            MoveType::Castling { kings_side } => {
+            MoveType::Castling {
+                color: _,
+                kings_side,
+            } => {
                 if kings_side {
-                    BoardPosition::new(7, 0)
+                    BoardPosition::new(6, 0)
                 } else {
-                    BoardPosition::new(0, 0)
+                    BoardPosition::new(2, 0)
                 }
             }
+            MoveType::EnPassant {
+                from: _,
+                to,
+                color: _,
+            } => to,
         }
     }
 }
