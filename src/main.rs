@@ -8,9 +8,7 @@ pub use possible_move_iter::{MoveType, PossibleMove, PossibleMoveIter};
 
 use ggez::{
     event::{self, EventHandler, MouseButton},
-    graphics,
-    nalgebra::{Point2, Vector2},
-    Context, ContextBuilder, GameResult,
+    graphics, Context, ContextBuilder, GameResult,
 };
 use gui::GUIState;
 use resource_loader::PieceSetImages;

@@ -8,11 +8,9 @@ pub enum MoveType {
         piece: Piece,
     },
     Castling {
-        color: PieceColor,
         kings_side: bool,
     },
     EnPassant {
-        color: PieceColor,
         from: BoardPosition,
         to: BoardPosition,
     },
@@ -21,16 +19,30 @@ pub enum MoveType {
 #[derive(Copy, Clone)]
 pub struct PossibleMove {
     move_type: MoveType,
+    en_passant_reset: u8,
 }
 
 impl PossibleMove {
-    pub fn play_move(&self, board_state: &mut BoardState) {
+    pub fn play_move(&self, board_state: &mut BoardState, color: PieceColor) {
+        if self.en_passant_reset != 8 {
+            println!("{}", self.en_passant_reset);
+            let y = if color == PieceColor::White { 3 } else { 4 };
+            *board_state.get_mut(BoardPosition::new(self.en_passant_reset, y)) =
+                Some(Piece::new(color, PieceType::Pawn { en_passant: false }));
+            println!(
+                "{}",
+                board_state
+                    .get_mut(BoardPosition::new(self.en_passant_reset, y))
+                    .unwrap()
+                    .to_string()
+            )
+        }
         match self.move_type {
             MoveType::SimpleMove { from, to, piece } => {
                 *board_state.get_mut(to) = Some(piece);
                 *board_state.get_mut(from) = None;
             }
-            MoveType::Castling { color, kings_side } => {
+            MoveType::Castling { kings_side } => {
                 let y_row = if color == PieceColor::White { 0 } else { 7 };
                 *board_state.get_mut(BoardPosition::new(4, y_row)) = None;
                 if kings_side {
@@ -49,7 +61,7 @@ impl PossibleMove {
                         Some(Piece::new(color, PieceType::King { moved: true }));
                 }
             }
-            MoveType::EnPassant { color, from, to } => {
+            MoveType::EnPassant { from, to } => {
                 *board_state.get_mut(to) =
                     Some(Piece::new(color, PieceType::Pawn { en_passant: false }));
                 *board_state.get_mut(from) = None;
@@ -80,10 +92,7 @@ impl Iterator for PossibleMoveIter {
 }
 
 impl PossibleMoveIter {
-    pub fn find_possible_moves(
-        board_state: &mut BoardState,
-        color: PieceColor,
-    ) -> PossibleMoveIter {
+    pub fn find_possible_moves(board_state: &BoardState, color: PieceColor) -> PossibleMoveIter {
         let mut new = PossibleMoveIter {
             index: 0,
             possible_moves: Vec::with_capacity(50),
@@ -95,21 +104,29 @@ impl PossibleMoveIter {
     fn push(&mut self, new_move: PossibleMove) {
         self.possible_moves.push(new_move);
     }
-    fn populate(&mut self, board_state: &mut BoardState, color: PieceColor) {
-        // any of this color pawns that could have be taken with en passant can no longer
+    fn populate(&mut self, board_state: &BoardState, color: PieceColor) {
+        // en_passant_reset is used to tell the move player which pawn needs to have en_passant set to false.
+        // if its 8, then no pawns need their en_passant to be reset
+        let mut en_passant_reset = 8;
         let this_color_en_passant_row = if color == PieceColor::White { 3 } else { 4 };
         for x in 0..8 {
-            let piece = board_state.get_mut(BoardPosition::new(x, this_color_en_passant_row));
+            let piece = board_state.get(BoardPosition::new(x, this_color_en_passant_row));
             if let Some(piece) = piece {
                 if let PieceType::Pawn { en_passant: true } = piece.piece_type {
-                    piece.piece_type = PieceType::Pawn { en_passant: false };
+                    en_passant_reset = x;
+                    break;
                 }
             }
         }
 
         for y in 0..8 {
             for x in 0..8 {
-                self.push_piece_moves(&board_state, BoardPosition::new(x, y), color);
+                self.push_piece_moves(
+                    &board_state,
+                    BoardPosition::new(x, y),
+                    color,
+                    en_passant_reset,
+                );
             }
         }
     }
@@ -118,19 +135,42 @@ impl PossibleMoveIter {
         board_state: &BoardState,
         board_position: BoardPosition,
         color: PieceColor,
+        en_passant_reset: u8,
     ) {
+        let y_dir = if color == PieceColor::White { 1 } else { -1 };
         let ofset_board_pos = |x: i8, y: i8| -> BoardPosition {
             BoardPosition::new(
                 (board_position.x as i8 + x) as u8,
-                (board_position.y as i8 + y) as u8,
+                (board_position.y as i8 + (y * y_dir)) as u8,
             )
         };
-        let mut try_move =
-            |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
-                let target_board_pos = ofset_board_pos(x, y);
-                if target_board_pos.is_valid() {
-                    let target_piece = board_state.get(target_board_pos);
-                    if target_piece.is_none() {
+        let try_move = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
+            let target_board_pos = ofset_board_pos(x, y);
+            if target_board_pos.is_valid() {
+                let target_piece = board_state.get(target_board_pos);
+                if target_piece.is_none() {
+                    self_access.push(PossibleMove {
+                        move_type: MoveType::SimpleMove {
+                            from: board_position,
+                            to: target_board_pos,
+                            piece: Piece {
+                                piece_type: result_piece,
+                                color: color,
+                            },
+                        },
+                        en_passant_reset: en_passant_reset,
+                    });
+                    return true;
+                }
+            }
+            false
+        };
+        let try_capture = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
+            let target_board_pos = ofset_board_pos(x, y);
+            if target_board_pos.is_valid() {
+                let target_piece = board_state.get(target_board_pos);
+                if let Some(piece) = target_piece {
+                    if piece.color != color {
                         self_access.push(PossibleMove {
                             move_type: MoveType::SimpleMove {
                                 from: board_position,
@@ -140,37 +180,15 @@ impl PossibleMoveIter {
                                     color: color,
                                 },
                             },
+                            en_passant_reset: en_passant_reset,
                         });
                         return true;
                     }
                 }
-                false
-            };
-        let mut try_capture =
-            |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
-                let target_board_pos = ofset_board_pos(x, y);
-                if target_board_pos.is_valid() {
-                    let target_piece = board_state.get(target_board_pos);
-                    if let Some(piece) = target_piece {
-                        if piece.color != color {
-                            self_access.push(PossibleMove {
-                                move_type: MoveType::SimpleMove {
-                                    from: board_position,
-                                    to: target_board_pos,
-                                    piece: Piece {
-                                        piece_type: result_piece,
-                                        color: color,
-                                    },
-                                },
-                            });
-                            return true;
-                        }
-                    }
-                }
-                false
-            };
+            }
+            false
+        };
         let selected_piece = board_state.get(board_position);
-        let y_dir = if color == PieceColor::White { 1 } else { -1 };
         if let Some(selected_piece) = selected_piece {
             if selected_piece.color == color {
                 match selected_piece.piece_type {
@@ -200,8 +218,8 @@ impl PossibleMoveIter {
                                             move_type: MoveType::EnPassant {
                                                 from: board_position,
                                                 to: ofset_board_pos(-1, 1),
-                                                color: color,
                                             },
+                                            en_passant_reset: en_passant_reset,
                                         });
                                     }
                                 }
@@ -214,8 +232,8 @@ impl PossibleMoveIter {
                                             move_type: MoveType::EnPassant {
                                                 from: board_position,
                                                 to: ofset_board_pos(1, 1),
-                                                color: color,
                                             },
+                                            en_passant_reset: en_passant_reset,
                                         });
                                     }
                                 }
@@ -276,7 +294,7 @@ impl PossibleMoveIter {
                         }
                         try_capture(self, target_x, target_y, PieceType::Bishop);
                     }
-                    PieceType::Rook { moved } => {
+                    PieceType::Rook { moved: _ } => {
                         let mut target_x = 1;
                         while try_move(self, target_x, 0, PieceType::Rook { moved: true }) {
                             target_x += 1;
@@ -393,10 +411,8 @@ impl PossibleMoveIter {
                                             color,
                                         ) {
                                             self.push(PossibleMove {
-                                                move_type: MoveType::Castling {
-                                                    color,
-                                                    kings_side: true,
-                                                },
+                                                move_type: MoveType::Castling { kings_side: true },
+                                                en_passant_reset: en_passant_reset,
                                             });
                                         }
                                     }
@@ -425,10 +441,8 @@ impl PossibleMoveIter {
                                             color,
                                         ) {
                                             self.push(PossibleMove {
-                                                move_type: MoveType::Castling {
-                                                    color,
-                                                    kings_side: false,
-                                                },
+                                                move_type: MoveType::Castling { kings_side: false },
+                                                en_passant_reset: en_passant_reset,
                                             });
                                         }
                                     }
@@ -447,7 +461,6 @@ fn positions_in_check(
     positions: Vec<BoardPosition>,
     color: PieceColor,
 ) -> bool {
-    let in_or_pass_check = false;
     let possible_opponent_moves =
         PossibleMoveIter::find_possible_moves(&mut board_state.clone(), color.opposite_color());
     for possible_move in possible_opponent_moves {

@@ -19,7 +19,6 @@ impl PieceSetImages {
             PieceType::Rook { moved: _ } => &self.rook,
             PieceType::Queen => &self.queen,
             PieceType::King { moved: _ } => &self.king,
-            _ => panic!("this piece type does not have an associated image"),
         }
     }
 }

@@ -176,7 +176,7 @@ impl GUIState {
         self.sellection = Sellection::Selected(pos);
 
         let all_possible_moves =
-            PossibleMoveIter::find_possible_moves(&mut self.board_state, PieceColor::White);
+            PossibleMoveIter::find_possible_moves(&self.board_state, PieceColor::White);
         for possible_move in all_possible_moves {
             let player_possible_move = PossiblePlayerMove::from(possible_move);
             if player_possible_move.from == pos {
@@ -188,7 +188,9 @@ impl GUIState {
     fn try_move_to(&mut self, pos: BoardPosition) -> bool {
         for possible_move in self.possible_moves_from_selection.iter() {
             if possible_move.to == pos {
-                possible_move.this_move.play_move(&mut self.board_state);
+                possible_move
+                    .this_move
+                    .play_move(&mut self.board_state, PieceColor::White);
                 return true;
             }
         }
@@ -222,15 +224,8 @@ impl PossiblePlayerMove {
                 to: _,
                 piece: _,
             } => from,
-            MoveType::Castling {
-                color: _,
-                kings_side: _,
-            } => BoardPosition::new(4, 0),
-            MoveType::EnPassant {
-                from,
-                to: _,
-                color: _,
-            } => from,
+            MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
+            MoveType::EnPassant { from, to: _ } => from,
         }
     }
     fn find_to(move_type: MoveType) -> BoardPosition {
@@ -240,21 +235,14 @@ impl PossiblePlayerMove {
                 to,
                 piece: _,
             } => to,
-            MoveType::Castling {
-                color: _,
-                kings_side,
-            } => {
+            MoveType::Castling { kings_side } => {
                 if kings_side {
                     BoardPosition::new(6, 0)
                 } else {
                     BoardPosition::new(2, 0)
                 }
             }
-            MoveType::EnPassant {
-                from: _,
-                to,
-                color: _,
-            } => to,
+            MoveType::EnPassant { from: _, to } => to,
         }
     }
 }
