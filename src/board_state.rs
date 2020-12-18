@@ -200,25 +200,7 @@ impl Default for BoardState {
                     ],
                     [None, None, None, None, None, None, None, None],
                     [None, None, None, None, None, None, None, None],
-                    [
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: true },
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: true },
-                            color: PieceColor::Black,
-                        }),
-                    ],
+                    [None, None, None, None, None, None, None, None],
                     [None, None, None, None, None, None, None, None],
                     [
                         Some(Piece {

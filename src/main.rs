@@ -1,4 +1,5 @@
 mod board_state;
+mod chess_AI;
 mod gui;
 mod possible_move_iter;
 mod resource_loader;
@@ -58,7 +59,6 @@ impl ChessGame {
 
 impl EventHandler for ChessGame {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        // TODO: recieve user input and update chess board accordingly
         Ok(())
     }
 

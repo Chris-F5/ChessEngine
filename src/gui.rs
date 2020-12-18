@@ -1,5 +1,5 @@
 use crate::{
-    BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages, PossibleMove,
+    chess_AI, BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages, PossibleMove,
     PossibleMoveIter,
 };
 use ggez::{
@@ -160,6 +160,8 @@ impl GUIState {
                 } else if self.try_move_to(board_pos) {
                     self.deselect();
                     println!("{:?}", self.board_state);
+                    println!(" ");
+                    self.play_computer_move();
                 }
             } else {
                 if let Some(piece) = self.board_state.get(board_pos) {
@@ -199,6 +201,10 @@ impl GUIState {
     fn deselect(&mut self) {
         self.sellection = Sellection::None;
         self.possible_moves_from_selection.clear();
+    }
+    fn play_computer_move(&mut self) {
+        let best_move = chess_AI::find_best_move(&self.board_state);
+        best_move.play_move(&mut self.board_state, PieceColor::Black)
     }
 }
 
