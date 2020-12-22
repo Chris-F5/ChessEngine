@@ -14,10 +14,10 @@ pub fn full_evaluate(board_state: &BoardState) -> Score {
                     1
                 };
                 match piece.piece_type {
-                    PieceType::Pawn { en_passant: _ } => score += 1 * color_multiplier,
+                    PieceType::Pawn => score += 1 * color_multiplier,
                     PieceType::Knight => score += 3 * color_multiplier,
                     PieceType::Bishop => score += 3 * color_multiplier,
-                    PieceType::Rook { moved: _ } => score += 5 * color_multiplier,
+                    PieceType::Rook => score += 5 * color_multiplier,
                     PieceType::Queen => score += 9 * color_multiplier,
                     _ => (),
                 }

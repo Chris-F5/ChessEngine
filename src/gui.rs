@@ -229,6 +229,9 @@ impl PossiblePlayerMove {
                 from,
                 to: _,
                 piece: _,
+                cancel_king_castle: _,
+                cancel_queen_castle: _,
+                pawn_move_two: _,
             } => from,
             MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
             MoveType::EnPassant { from, to: _ } => from,
@@ -240,6 +243,9 @@ impl PossiblePlayerMove {
                 from: _,
                 to,
                 piece: _,
+                cancel_king_castle: _,
+                cancel_queen_castle: _,
+                pawn_move_two: _,
             } => to,
             MoveType::Castling { kings_side } => {
                 if kings_side {

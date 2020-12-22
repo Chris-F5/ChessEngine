@@ -6,6 +6,9 @@ pub enum MoveType {
         from: BoardPosition,
         to: BoardPosition,
         piece: Piece,
+        cancel_king_castle: bool,
+        cancel_queen_castle: bool,
+        pawn_move_two: bool,
     },
     Castling {
         kings_side: bool,
@@ -19,43 +22,56 @@ pub enum MoveType {
 #[derive(Copy, Clone)]
 pub struct PossibleMove {
     move_type: MoveType,
-    en_passant_reset: u8,
 }
 
 impl PossibleMove {
     pub fn play_move(&self, board_state: &mut BoardState, color: PieceColor) {
-        if self.en_passant_reset != 8 {
-            let y = if color == PieceColor::White { 3 } else { 4 };
-            *board_state.get_mut(BoardPosition::new(self.en_passant_reset, y)) =
-                Some(Piece::new(color, PieceType::Pawn { en_passant: false }));
-        }
+        // reset the en_passant to some colunm that will never be reached by the possible move finder
+        board_state.en_passant_colunm = 55;
+
         match self.move_type {
-            MoveType::SimpleMove { from, to, piece } => {
+            MoveType::SimpleMove { from, to, piece, cancel_king_castle, cancel_queen_castle, pawn_move_two } => {
                 *board_state.get_mut(to) = Some(piece);
                 *board_state.get_mut(from) = None;
+                if pawn_move_two{
+                    board_state.en_passant_colunm = to.x;
+                }else{
+                if cancel_king_castle{
+                    if color == PieceColor::White{
+                        board_state.white_king_castle = false;
+                    }else{
+                        board_state.black_king_castle = false;
+                    }
+                }
+                if cancel_queen_castle{
+                    if color == PieceColor::White{
+                        board_state.white_queen_castle = false;
+                    }else{
+                        board_state.black_queen_castle = false;
+                    }
+                }
+            }
             }
             MoveType::Castling { kings_side } => {
                 let y_row = if color == PieceColor::White { 0 } else { 7 };
                 *board_state.get_mut(BoardPosition::new(4, y_row)) = None;
                 if kings_side {
                     *board_state.get_mut(BoardPosition::new(7, y_row)) = None;
-                    *board_state.get_mut(BoardPosition::new(4, y_row)) = None;
                     *board_state.get_mut(BoardPosition::new(5, y_row)) =
-                        Some(Piece::new(color, PieceType::Rook { moved: true }));
+                        Some(Piece::new(color, PieceType::Rook));
                     *board_state.get_mut(BoardPosition::new(6, y_row)) =
-                        Some(Piece::new(color, PieceType::King { moved: true }));
+                        Some(Piece::new(color, PieceType::King));
                 } else {
                     *board_state.get_mut(BoardPosition::new(0, y_row)) = None;
-                    *board_state.get_mut(BoardPosition::new(4, y_row)) = None;
                     *board_state.get_mut(BoardPosition::new(3, y_row)) =
-                        Some(Piece::new(color, PieceType::Rook { moved: true }));
+                        Some(Piece::new(color, PieceType::Rook));
                     *board_state.get_mut(BoardPosition::new(2, y_row)) =
-                        Some(Piece::new(color, PieceType::King { moved: true }));
+                        Some(Piece::new(color, PieceType::King));
                 }
             }
             MoveType::EnPassant { from, to } => {
                 *board_state.get_mut(to) =
-                    Some(Piece::new(color, PieceType::Pawn { en_passant: false }));
+                    Some(Piece::new(color, PieceType::Pawn));
                 *board_state.get_mut(from) = None;
                 *board_state.get_mut(BoardPosition::new(to.x, from.y)) = None;
             }
@@ -97,27 +113,12 @@ impl PossibleMoveIter {
         self.possible_moves.push(new_move);
     }
     fn populate(&mut self, board_state: &BoardState, color: PieceColor) {
-        // en_passant_reset is used to tell the move player which pawn needs to have en_passant set to false.
-        // if its 8, then no pawns need their en_passant to be reset
-        let mut en_passant_reset = 8;
-        let this_color_en_passant_row = if color == PieceColor::White { 3 } else { 4 };
-        for x in 0..8 {
-            let piece = board_state.get(BoardPosition::new(x, this_color_en_passant_row));
-            if let Some(piece) = piece {
-                if let PieceType::Pawn { en_passant: true } = piece.piece_type {
-                    en_passant_reset = x;
-                    break;
-                }
-            }
-        }
-
         for y in 0..8 {
             for x in 0..8 {
                 self.push_piece_moves(
                     &board_state,
                     BoardPosition::new(x, y),
                     color,
-                    en_passant_reset,
                 );
             }
         }
@@ -127,7 +128,6 @@ impl PossibleMoveIter {
         board_state: &BoardState,
         board_position: BoardPosition,
         color: PieceColor,
-        en_passant_reset: u8,
     ) {
         let y_dir = if color == PieceColor::White { 1 } else { -1 };
         let ofset_board_pos = |x: i8, y: i8| -> BoardPosition {
@@ -136,7 +136,7 @@ impl PossibleMoveIter {
                 (board_position.y as i8 + (y * y_dir)) as u8,
             )
         };
-        let try_move = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
+        let try_move = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType, cancel_king_castle: bool, cancel_queen_castle: bool, pawn_move_two: bool| -> bool {
             let target_board_pos = ofset_board_pos(x, y);
             if target_board_pos.is_valid() {
                 let target_piece = board_state.get(target_board_pos);
@@ -149,15 +149,17 @@ impl PossibleMoveIter {
                                 piece_type: result_piece,
                                 color: color,
                             },
+                            cancel_king_castle,
+                            cancel_queen_castle,
+                            pawn_move_two
                         },
-                        en_passant_reset: en_passant_reset,
                     });
                     return true;
                 }
             }
             false
         };
-        let try_capture = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType| -> bool {
+        let try_capture = |self_access: &mut Self, x: i8, y: i8, result_piece: PieceType, cancel_king_castle: bool, cancel_queen_castle: bool| -> bool {
             let target_board_pos = ofset_board_pos(x, y);
             if target_board_pos.is_valid() {
                 let target_piece = board_state.get(target_board_pos);
@@ -171,8 +173,10 @@ impl PossibleMoveIter {
                                     piece_type: result_piece,
                                     color: color,
                                 },
+                                cancel_king_castle,
+                                cancel_queen_castle,
+                                pawn_move_two: false
                             },
-                            en_passant_reset: en_passant_reset,
                         });
                         return true;
                     }
@@ -184,267 +188,168 @@ impl PossibleMoveIter {
         if let Some(selected_piece) = selected_piece {
             if selected_piece.color == color {
                 match selected_piece.piece_type {
-                    PieceType::Pawn { en_passant: _ } => {
+                    PieceType::Pawn => {
                         if (board_position.y == 1 && color == PieceColor::Black)
                             || (board_position.y == 6 && color == PieceColor::White)
                         {
-                            try_move(self, 0, 1, PieceType::Queen);
-                            try_capture(self, 1, 1, PieceType::Queen);
-                            try_capture(self, -1, 1, PieceType::Queen);
+                            try_move(self, 0, 1, PieceType::Queen, false, false, false);
+                            try_capture(self, 1, 1, PieceType::Queen, false, false);
+                            try_capture(self, -1, 1, PieceType::Queen, false, false);
                         } else {
-                            try_capture(self, 1, 1, PieceType::Pawn { en_passant: false });
-                            try_capture(self, -1, 1, PieceType::Pawn { en_passant: false });
-                            if try_move(self, 0, 1, PieceType::Pawn { en_passant: false })
+                            try_capture(self, 1, 1, PieceType::Pawn, false, false);
+                            try_capture(self, -1, 1, PieceType::Pawn, false, false);
+                            if try_move(self, 0, 1, PieceType::Pawn, false, false, false)
                                 && (board_position.y == 1 || board_position.y == 6)
                             {
-                                try_move(self, 0, 2, PieceType::Pawn { en_passant: true });
+                                try_move(self, 0, 2, PieceType::Pawn, false, false, true);
                             } else if (board_position.y == 3 && color == PieceColor::Black)
                                 || (board_position.y == 4 && color == PieceColor::White)
                             {
-                                let left_piece_pos = ofset_board_pos(-1, 0);
-                                if left_piece_pos.is_valid() {
-                                    if let Some(left_piece) = board_state.get(left_piece_pos) {
-                                        if let PieceType::Pawn { en_passant: true } =
-                                            left_piece.piece_type
-                                        {
-                                            self.push(PossibleMove {
-                                                move_type: MoveType::EnPassant {
-                                                    from: board_position,
-                                                    to: ofset_board_pos(-1, 1),
-                                                },
-                                                en_passant_reset: en_passant_reset,
-                                            });
-                                        }
-                                    }
-                                }
-                                let right_piece_pos = ofset_board_pos(1, 0);
-                                if right_piece_pos.is_valid() {
-                                    if let Some(right_piece) = board_state.get(right_piece_pos) {
-                                        if let PieceType::Pawn { en_passant: true } =
-                                            right_piece.piece_type
-                                        {
-                                            self.push(PossibleMove {
-                                                move_type: MoveType::EnPassant {
-                                                    from: board_position,
-                                                    to: ofset_board_pos(1, 1),
-                                                },
-                                                en_passant_reset: en_passant_reset,
-                                            });
-                                        }
-                                    }
+                                if board_state.en_passant_colunm == board_position.x + 1{
+                                    self.push(PossibleMove {
+                                        move_type: MoveType::EnPassant {
+                                            from: board_position,
+                                            to: ofset_board_pos(1, 1),
+                                        },
+                                    });
+                                }else if board_position.x != 0 && board_state.en_passant_colunm == board_position.x - 1{
+                                    self.push(PossibleMove {
+                                        move_type: MoveType::EnPassant {
+                                            from: board_position,
+                                            to: ofset_board_pos(-1, 1),
+                                        },
+                                    });
                                 }
                             }
                         }
                     }
                     PieceType::Knight => {
-                        try_move(self, 1, 2, PieceType::Knight);
-                        try_capture(self, 1, 2, PieceType::Knight);
-                        try_move(self, 2, 1, PieceType::Knight);
-                        try_capture(self, 2, 1, PieceType::Knight);
+                        let mut move_or_capture = |x_move: i8, y_move: i8|{
+                            if !try_move(self, x_move, y_move, PieceType::Knight, false, false,false){
+                                try_capture(self, x_move, y_move, PieceType::Knight, false, false);
+                            }
+                        };
+                        move_or_capture(1,2);
+                        move_or_capture(2,1);
 
-                        try_move(self, 1, -2, PieceType::Knight);
-                        try_capture(self, 1, -2, PieceType::Knight);
-                        try_move(self, 2, -1, PieceType::Knight);
-                        try_capture(self, 2, -1, PieceType::Knight);
+                        move_or_capture(1,-2);
+                        move_or_capture(2,-1);
 
-                        try_move(self, -1, 2, PieceType::Knight);
-                        try_capture(self, -1, 2, PieceType::Knight);
-                        try_move(self, -2, 1, PieceType::Knight);
-                        try_capture(self, -2, 1, PieceType::Knight);
+                        move_or_capture(-1,2);
+                        move_or_capture(-2,1);
 
-                        try_move(self, -1, -2, PieceType::Knight);
-                        try_capture(self, -1, -2, PieceType::Knight);
-                        try_move(self, -2, -1, PieceType::Knight);
-                        try_capture(self, -2, -1, PieceType::Knight);
+                        move_or_capture(-1,-2);
+                        move_or_capture(-2,-1);
                     }
                     PieceType::Bishop => {
-                        let mut target_x = 1;
-                        let mut target_y = 1;
-                        while try_move(self, target_x, target_y, PieceType::Bishop) {
-                            target_x += 1;
-                            target_y += 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Bishop);
+                        let  mut move_in_dir = |x_dir: i8, y_dir: i8|{
+                            let mut target_x = x_dir;
+                            let mut target_y = y_dir;
+                            while try_move(self, target_x, target_y, PieceType::Bishop, false, false, false) {
+                                target_x += x_dir;
+                                target_y += y_dir;
+                            }
+                            try_capture(self, target_x, target_y, PieceType::Bishop, false , false);
+                        };
 
-                        let mut target_x = -1;
-                        let mut target_y = 1;
-                        while try_move(self, target_x, target_y, PieceType::Bishop) {
-                            target_x -= 1;
-                            target_y += 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Bishop);
-
-                        let mut target_x = 1;
-                        let mut target_y = -1;
-                        while try_move(self, target_x, target_y, PieceType::Bishop) {
-                            target_x += 1;
-                            target_y -= 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Bishop);
-
-                        let mut target_x = -1;
-                        let mut target_y = -1;
-                        while try_move(self, target_x, target_y, PieceType::Bishop) {
-                            target_x -= 1;
-                            target_y -= 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Bishop);
+                        move_in_dir(1,1);
+                        move_in_dir(1,-1);
+                        move_in_dir(-1,1);
+                        move_in_dir(-1,-1);
                     }
-                    PieceType::Rook { moved: _ } => {
-                        let mut target_x = 1;
-                        while try_move(self, target_x, 0, PieceType::Rook { moved: true }) {
-                            target_x += 1;
-                        }
-                        try_capture(self, target_x, 0, PieceType::Rook { moved: true });
-                        let mut target_x = -1;
-                        while try_move(self, target_x, 0, PieceType::Rook { moved: true }) {
-                            target_x -= 1;
-                        }
-                        try_capture(self, target_x, 0, PieceType::Rook { moved: true });
-                        let mut target_y = 1;
-                        while try_move(self, 0, target_y, PieceType::Rook { moved: true }) {
-                            target_y += 1;
-                        }
-                        try_capture(self, 0, target_y, PieceType::Rook { moved: true });
-                        let mut target_y = -1;
-                        while try_move(self, 0, target_y, PieceType::Rook { moved: true }) {
-                            target_y -= 1;
-                        }
-                        try_capture(self, 0, target_y, PieceType::Rook { moved: true });
+                    PieceType::Rook => {
+                        let mut move_in_dir = |x_dir: i8, y_dir: i8|{
+                            let mut target_x = x_dir;
+                            let mut target_y = y_dir;
+                            while try_move(self, target_x, target_y, PieceType::Rook, false, false, false) {
+                                target_x += x_dir;
+                                target_y += y_dir;
+                            }
+                            try_capture(self, target_x, target_y, PieceType::Rook, false , false);
+                        };
+                        move_in_dir(1,0);
+                        move_in_dir(-1,0); 
+                        move_in_dir(0,1);
+                        move_in_dir(0,-1);                    
                     }
                     PieceType::Queen => {
-                        let mut target_x = 1;
-                        while try_move(self, target_x, 0, PieceType::Queen) {
-                            target_x += 1;
-                        }
-                        try_capture(self, target_x, 0, PieceType::Queen);
-                        let mut target_x = -1;
-                        while try_move(self, target_x, 0, PieceType::Queen) {
-                            target_x -= 1;
-                        }
-                        try_capture(self, target_x, 0, PieceType::Queen);
-                        let mut target_y = 1;
-                        while try_move(self, 0, target_y, PieceType::Queen) {
-                            target_y += 1;
-                        }
-                        try_capture(self, 0, target_y, PieceType::Queen);
-                        let mut target_y = -1;
-                        while try_move(self, 0, target_y, PieceType::Queen) {
-                            target_y -= 1;
-                        }
-                        try_capture(self, 0, target_y, PieceType::Queen);
+                        let mut move_in_dir = |x_dir: i8, y_dir: i8|{
+                            let mut target_x = x_dir;
+                            let mut target_y = y_dir;
+                            while try_move(self, target_x, target_y, PieceType::Queen, false, false, false) {
+                                target_x += x_dir;
+                                target_y += y_dir;
+                            }
+                            try_capture(self, target_x, target_y, PieceType::Queen, false , false);
+                        };
+                        move_in_dir(1,0);
+                        move_in_dir(-1,0); 
+                        move_in_dir(0,1);
+                        move_in_dir(0,-1);
 
-                        let mut target_x = 1;
-                        let mut target_y = 1;
-                        while try_move(self, target_x, target_y, PieceType::Queen) {
-                            target_x += 1;
-                            target_y += 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Queen);
-
-                        let mut target_x = -1;
-                        let mut target_y = 1;
-                        while try_move(self, target_x, target_y, PieceType::Queen) {
-                            target_x -= 1;
-                            target_y += 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Queen);
-
-                        let mut target_x = 1;
-                        let mut target_y = -1;
-                        while try_move(self, target_x, target_y, PieceType::Queen) {
-                            target_x += 1;
-                            target_y -= 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Queen);
-
-                        let mut target_x = -1;
-                        let mut target_y = -1;
-                        while try_move(self, target_x, target_y, PieceType::Queen) {
-                            target_x -= 1;
-                            target_y -= 1;
-                        }
-                        try_capture(self, target_x, target_y, PieceType::Queen);
+                        move_in_dir(1,1);
+                        move_in_dir(1,-1);
+                        move_in_dir(-1,1);
+                        move_in_dir(-1,-1);
                     }
-                    PieceType::King { moved } => {
-                        try_move(self, 0, 1, PieceType::King { moved: true });
-                        try_move(self, 1, 1, PieceType::King { moved: true });
-                        try_move(self, 1, 0, PieceType::King { moved: true });
-                        try_move(self, 1, -1, PieceType::King { moved: true });
-                        try_move(self, 0, -1, PieceType::King { moved: true });
-                        try_move(self, -1, -1, PieceType::King { moved: true });
-                        try_move(self, -1, 0, PieceType::King { moved: true });
-                        try_move(self, -1, 1, PieceType::King { moved: true });
+                    PieceType::King => {
+                        let mut move_or_capture = |x_move: i8, y_move: i8|{
+                            if !try_move(self, x_move, y_move, PieceType::King, false, false,false){
+                                try_capture(self, x_move, y_move, PieceType::King, false, false);
+                            }
+                        };
 
-                        try_capture(self, 0, 1, PieceType::King { moved: true });
-                        try_capture(self, 1, 1, PieceType::King { moved: true });
-                        try_capture(self, 1, 0, PieceType::King { moved: true });
-                        try_capture(self, 1, -1, PieceType::King { moved: true });
-                        try_capture(self, 0, -1, PieceType::King { moved: true });
-                        try_capture(self, -1, -1, PieceType::King { moved: true });
-                        try_capture(self, -1, 0, PieceType::King { moved: true });
-                        try_capture(self, -1, 1, PieceType::King { moved: true });
+                        move_or_capture(0,1);
+                        move_or_capture(1,1);
+                        move_or_capture(1, 0);
+                        move_or_capture(1,-1);
+                        move_or_capture(0,-1);
+                        move_or_capture(-1,-1);
+                        move_or_capture(-1,0);
+                        move_or_capture(-1,1);
 
                         // castling
-                        if moved == false {
-                            if board_state
+                        if ((board_state.white_king_castle && color == PieceColor::White) || (board_state.black_king_castle && color == PieceColor::Black)) &&
+                            board_state
                                 .get(BoardPosition::new(5, board_position.y))
                                 .is_none()
                                 && board_state
                                     .get(BoardPosition::new(6, board_position.y))
-                                    .is_none()
+                                    .is_none() && !positions_in_check(
+                                        &board_state,
+                                        vec![
+                                            BoardPosition::new(4, board_position.y),
+                                            BoardPosition::new(5, board_position.y),
+                                        ],
+                                        color,
+                                    ) 
                             {
-                                if let Some(rook) =
-                                    board_state.get(BoardPosition::new(7, board_position.y))
-                                {
-                                    if let PieceType::Rook { moved: false } = rook.piece_type {
-                                        if !positions_in_check(
-                                            &board_state,
-                                            vec![
-                                                BoardPosition::new(4, board_position.y),
-                                                BoardPosition::new(5, board_position.y),
-                                            ],
-                                            color,
-                                        ) {
-                                            self.push(PossibleMove {
-                                                move_type: MoveType::Castling { kings_side: true },
-                                                en_passant_reset: en_passant_reset,
-                                            });
-                                        }
-                                    }
-                                }
+                                self.push(PossibleMove {
+                                    move_type: MoveType::Castling { kings_side: true },
+                                });
                             }
-                            if board_state
-                                .get(BoardPosition::new(1, board_position.y))
+
+                        if ((board_state.white_queen_castle && color == PieceColor::White) || (board_state.black_queen_castle && color == PieceColor::Black)) &&
+                            board_state
+                                .get(BoardPosition::new(3, board_position.y))
                                 .is_none()
                                 && board_state
                                     .get(BoardPosition::new(2, board_position.y))
-                                    .is_none()
-                                && board_state
-                                    .get(BoardPosition::new(3, board_position.y))
-                                    .is_none()
+                                    .is_none() && board_state.get(BoardPosition::new(1, board_position.y))
+                                    .is_none() &&!positions_in_check(
+                                        &board_state,
+                                        vec![
+                                            BoardPosition::new(3, board_position.y),
+                                            BoardPosition::new(2, board_position.y),
+                                            BoardPosition::new(1, board_position.y),
+                                        ],
+                                        color,
+                                    ) 
                             {
-                                if let Some(rook) =
-                                    board_state.get(BoardPosition::new(0, board_position.y))
-                                {
-                                    if let PieceType::Rook { moved: false } = rook.piece_type {
-                                        if !positions_in_check(
-                                            &board_state,
-                                            vec![
-                                                BoardPosition::new(4, board_position.y),
-                                                BoardPosition::new(3, board_position.y),
-                                            ],
-                                            color,
-                                        ) {
-                                            self.push(PossibleMove {
-                                                move_type: MoveType::Castling { kings_side: false },
-                                                en_passant_reset: en_passant_reset,
-                                            });
-                                        }
-                                    }
-                                }
+                                self.push(PossibleMove {
+                                    move_type: MoveType::Castling { kings_side: false },
+                                });
                             }
-                        }
                     }
                 }
             }
@@ -461,7 +366,7 @@ fn positions_in_check(
     let mut board_state = board_state.clone();
     for position in positions.iter() {
         // put a king here so pawns can take it
-        *board_state.get_mut(*position) = Some(Piece::new(color, PieceType::King { moved: true }));
+        *board_state.get_mut(*position) = Some(Piece::new(color, PieceType::King));
     }
     let possible_opponent_moves =
         PossibleMoveIter::find_possible_moves(&mut board_state, color.opposite_color());
@@ -471,6 +376,9 @@ fn positions_in_check(
                 from: _,
                 to,
                 piece: _,
+                cancel_king_castle: _,
+                cancel_queen_castle: _,
+                pawn_move_two: _,
             } => {
                 for position in positions.iter() {
                     if *position == to {

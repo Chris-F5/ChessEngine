@@ -42,26 +42,23 @@ impl string::ToString for PieceColor {
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum PieceType {
-    Pawn { en_passant: bool },
+    Pawn,
     Bishop,
     Knight,
-    Rook { moved: bool },
+    Rook,
     Queen,
-    King { moved: bool },
+    King,
 }
 
 impl string::ToString for PieceType {
     fn to_string(&self) -> String {
         match self {
-            PieceType::Pawn { en_passant: false } => String::from("i"),
-            PieceType::Pawn { en_passant: true } => String::from("ï"),
-            PieceType::Bishop => String::from("Ø"),
+            PieceType::Pawn => String::from("i"),
+            PieceType::Bishop => String::from("x"),
             PieceType::Knight => String::from("F"),
-            PieceType::Rook { moved: false } => String::from("T"),
-            PieceType::Rook { moved: true } => String::from("I"),
+            PieceType::Rook  => String::from("I"),
             PieceType::Queen => String::from("Q"),
-            PieceType::King { moved: false } => String::from("K"),
-            PieceType::King { moved: true } => String::from("k"),
+            PieceType::King => String::from("K"),
         }
     }
 }
@@ -89,6 +86,11 @@ impl string::ToString for Piece {
 #[derive(Clone)]
 pub struct BoardState {
     pieces: [[Option<Piece>; 8]; 8],
+    pub white_king_castle: bool,
+    pub white_queen_castle: bool,
+    pub black_king_castle: bool,
+    pub black_queen_castle: bool,
+    pub en_passant_colunm: u8
 }
 
 impl BoardState {
@@ -128,11 +130,16 @@ impl fmt::Debug for BoardState {
 impl Default for BoardState {
     fn default() -> BoardState {
         BoardState {
+            en_passant_colunm: 55,
+            white_king_castle: true,
+            white_queen_castle: true,
+            black_king_castle: true,
+            black_queen_castle: true,
             pieces: {
                 [
                     [
                         Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
+                            piece_type: PieceType::Rook,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
@@ -148,7 +155,7 @@ impl Default for BoardState {
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::King { moved: false },
+                            piece_type: PieceType::King,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
@@ -160,41 +167,41 @@ impl Default for BoardState {
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
+                            piece_type: PieceType::Rook,
                             color: PieceColor::White,
                         }),
                     ],
                     [
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::White,
                         }),
                     ],
@@ -204,41 +211,41 @@ impl Default for BoardState {
                     [None, None, None, None, None, None, None, None],
                     [
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Pawn { en_passant: false },
+                            piece_type: PieceType::Pawn,
                             color: PieceColor::Black,
                         }),
                     ],
                     [
                         Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
+                            piece_type: PieceType::Rook,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
@@ -254,7 +261,7 @@ impl Default for BoardState {
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::King { moved: false },
+                            piece_type: PieceType::King,
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
@@ -266,7 +273,7 @@ impl Default for BoardState {
                             color: PieceColor::Black,
                         }),
                         Some(Piece {
-                            piece_type: PieceType::Rook { moved: false },
+                            piece_type: PieceType::Rook,
                             color: PieceColor::Black,
                         }),
                     ],

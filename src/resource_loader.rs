@@ -13,12 +13,12 @@ pub struct PieceSetImages {
 impl PieceSetImages {
     pub fn get_image(&self, piece_type: PieceType) -> &Image {
         match piece_type {
-            PieceType::Pawn { en_passant: _ } => &self.pawn,
+            PieceType::Pawn => &self.pawn,
             PieceType::Bishop => &self.bishop,
             PieceType::Knight => &self.knight,
-            PieceType::Rook { moved: _ } => &self.rook,
+            PieceType::Rook => &self.rook,
             PieceType::Queen => &self.queen,
-            PieceType::King { moved: _ } => &self.king,
+            PieceType::King => &self.king,
         }
     }
 }
