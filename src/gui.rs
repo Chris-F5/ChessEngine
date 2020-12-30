@@ -1,7 +1,8 @@
 use crate::{
-    chess_AI, BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages, PossibleMove,
-    PossibleMoveIter,
+    rules::color_in_check, BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages,
+    PossibleMove, PossibleMoveIter,
 };
+use dialog::DialogBox;
 use ggez::{
     graphics,
     nalgebra::{Point2, Vector2},
@@ -47,12 +48,12 @@ fn board_pos_to_screen_space(board_pos: BoardPosition) -> (f32, f32) {
 }
 
 pub struct GUIState {
-    board_state: BoardState,
     sellection: Sellection,
     white_piece_images: PieceSetImages,
     black_piece_images: PieceSetImages,
     board_image: graphics::Image,
     possible_moves_from_selection: Vec<PossiblePlayerMove>,
+    pending_move: Option<PossibleMove>,
 }
 impl GUIState {
     pub fn new(
@@ -61,13 +62,19 @@ impl GUIState {
         board_image: graphics::Image,
     ) -> GUIState {
         GUIState {
-            board_state: Default::default(),
             sellection: Sellection::None,
             white_piece_images,
             black_piece_images,
             board_image,
             possible_moves_from_selection: Vec::with_capacity(20),
+            pending_move: None,
         }
+    }
+
+    pub fn check_for_move(&mut self) -> Option<PossibleMove> {
+        let pending_move = self.pending_move;
+        self.pending_move = None;
+        pending_move
     }
 
     fn get_piece_image(&self, piece: Piece) -> &graphics::Image {
@@ -76,10 +83,10 @@ impl GUIState {
             PieceColor::Black => self.black_piece_images.get_image(piece.piece_type),
         }
     }
-    pub fn draw(&self, ctx: &mut Context) {
+    pub fn draw(&self, ctx: &mut Context, board_state: &BoardState) {
         self.draw_board(ctx);
         self.draw_highlighted_squares(ctx);
-        self.draw_pieces(ctx);
+        self.draw_pieces(ctx, board_state);
     }
     fn draw_board(&self, ctx: &mut Context) {
         graphics::draw(
@@ -94,10 +101,10 @@ impl GUIState {
         )
         .unwrap();
     }
-    fn draw_pieces(&self, ctx: &mut Context) {
+    fn draw_pieces(&self, ctx: &mut Context, board_state: &BoardState) {
         for y in 0..8 {
             for x in 0..8 {
-                let piece = self.board_state.get(BoardPosition::new(x, y));
+                let piece = board_state.get(BoardPosition::new(x, y));
                 if let Some(piece) = piece {
                     let piece_image = self.get_piece_image(*piece);
                     let (screen_space_x, screen_space_y) =
@@ -151,7 +158,7 @@ impl GUIState {
             graphics::draw(ctx, &mesh, graphics::DrawParam::new()).unwrap();
         }
     }
-    pub fn click(&mut self, x: f32, y: f32) {
+    pub fn click(&mut self, x: f32, y: f32, board_state: &BoardState) {
         let board_pos = screen_space_to_board_pos(x, y);
         if let Some(board_pos) = board_pos {
             if let Sellection::Selected(selection) = self.sellection {
@@ -159,14 +166,11 @@ impl GUIState {
                     self.deselect();
                 } else if self.try_move_to(board_pos) {
                     self.deselect();
-                    println!("{:?}", self.board_state);
-                    println!(" ");
-                    self.play_computer_move();
                 }
             } else {
-                if let Some(piece) = self.board_state.get(board_pos) {
+                if let Some(piece) = board_state.get(board_pos) {
                     if piece.color == PieceColor::White {
-                        self.select(board_pos);
+                        self.select(board_pos, board_state);
                     }
                 }
             }
@@ -174,14 +178,20 @@ impl GUIState {
             self.deselect();
         }
     }
-    fn select(&mut self, pos: BoardPosition) {
+    fn select(&mut self, pos: BoardPosition, board_state: &BoardState) {
         self.sellection = Sellection::Selected(pos);
 
         let all_possible_moves =
-            PossibleMoveIter::find_possible_moves(&self.board_state, PieceColor::White);
+            PossibleMoveIter::find_possible_moves(board_state, PieceColor::White);
+
         for possible_move in all_possible_moves {
             let player_possible_move = PossiblePlayerMove::from(possible_move);
-            if player_possible_move.from == pos {
+            let mut possible_new_board_state = board_state.clone();
+            possible_move.play_move(&mut possible_new_board_state, PieceColor::White);
+            // if this move is from the selected position and does not leave the player in check
+            if player_possible_move.from == pos
+                && !color_in_check(&possible_new_board_state, PieceColor::White)
+            {
                 self.possible_moves_from_selection
                     .push(player_possible_move);
             }
@@ -190,9 +200,7 @@ impl GUIState {
     fn try_move_to(&mut self, pos: BoardPosition) -> bool {
         for possible_move in self.possible_moves_from_selection.iter() {
             if possible_move.to == pos {
-                possible_move
-                    .this_move
-                    .play_move(&mut self.board_state, PieceColor::White);
+                self.pending_move = Some(possible_move.this_move);
                 return true;
             }
         }
@@ -201,10 +209,6 @@ impl GUIState {
     fn deselect(&mut self) {
         self.sellection = Sellection::None;
         self.possible_moves_from_selection.clear();
-    }
-    fn play_computer_move(&mut self) {
-        let best_move = chess_AI::find_best_move(&self.board_state);
-        best_move.play_move(&mut self.board_state, PieceColor::Black)
     }
 }
 
@@ -257,4 +261,17 @@ impl PossiblePlayerMove {
             MoveType::EnPassant { from: _, to } => to,
         }
     }
+}
+
+pub fn show_player_wins_message() {
+    dialog::Message::new("Congratulations - You Win!")
+        .title("You Win")
+        .show()
+        .expect("Could not display dialog box");
+}
+pub fn show_computer_wins_message() {
+    dialog::Message::new("Computer Won. :(")
+        .title("Computer Won")
+        .show()
+        .expect("Could not display dialog box");
 }

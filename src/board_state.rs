@@ -16,7 +16,7 @@ impl BoardPosition {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum PieceColor {
     White,
     Black,
@@ -56,7 +56,7 @@ impl string::ToString for PieceType {
             PieceType::Pawn => String::from("i"),
             PieceType::Bishop => String::from("x"),
             PieceType::Knight => String::from("F"),
-            PieceType::Rook  => String::from("I"),
+            PieceType::Rook => String::from("I"),
             PieceType::Queen => String::from("Q"),
             PieceType::King => String::from("K"),
         }
@@ -90,7 +90,7 @@ pub struct BoardState {
     pub white_queen_castle: bool,
     pub black_king_castle: bool,
     pub black_queen_castle: bool,
-    pub en_passant_colunm: u8
+    pub en_passant_colunm: u8,
 }
 
 impl BoardState {
@@ -127,6 +127,73 @@ impl fmt::Debug for BoardState {
     }
 }
 
+impl Default for BoardState {
+    fn default() -> BoardState {
+        BoardState {
+            en_passant_colunm: 55,
+            white_king_castle: false,
+            white_queen_castle: false,
+            black_king_castle: false,
+            black_queen_castle: false,
+            pieces: {
+                [
+                    [
+                        Some(Piece {
+                            piece_type: PieceType::Rook,
+                            color: PieceColor::White,
+                        }),
+                        None,
+                        None,
+                        None,
+                        Some(Piece {
+                            piece_type: PieceType::King,
+                            color: PieceColor::White,
+                        }),
+                        None,
+                        None,
+                        Some(Piece {
+                            piece_type: PieceType::Rook,
+                            color: PieceColor::White,
+                        }),
+                    ],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [None, None, None, None, None, None, None, None],
+                    [
+                        Some(Piece {
+                            piece_type: PieceType::Rook,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Knight,
+                            color: PieceColor::Black,
+                        }),
+                        Some(Piece {
+                            piece_type: PieceType::Bishop,
+                            color: PieceColor::Black,
+                        }),
+                        None,
+                        Some(Piece {
+                            piece_type: PieceType::King,
+                            color: PieceColor::Black,
+                        }),
+                        None,
+                        None,
+                        Some(Piece {
+                            piece_type: PieceType::Rook,
+                            color: PieceColor::Black,
+                        }),
+                    ],
+                ]
+            },
+        }
+    }
+}
+
+/*
 impl Default for BoardState {
     fn default() -> BoardState {
         BoardState {
@@ -282,3 +349,4 @@ impl Default for BoardState {
         }
     }
 }
+*/
