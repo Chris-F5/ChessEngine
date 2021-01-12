@@ -132,6 +132,23 @@ impl Piece {
     pub fn new(color: PieceColor, piece_type: PieceType) -> Piece {
         Piece { color, piece_type }
     }
+    pub fn from_fen_char(c: char) -> Piece {
+        match c {
+            'p' => Piece::new(PieceColor::Black, PieceType::Pawn),
+            'n' => Piece::new(PieceColor::Black, PieceType::Knight),
+            'b' => Piece::new(PieceColor::Black, PieceType::Bishop),
+            'r' => Piece::new(PieceColor::Black, PieceType::Rook),
+            'q' => Piece::new(PieceColor::Black, PieceType::Queen),
+            'k' => Piece::new(PieceColor::Black, PieceType::King),
+            'P' => Piece::new(PieceColor::White, PieceType::Pawn),
+            'N' => Piece::new(PieceColor::White, PieceType::Knight),
+            'B' => Piece::new(PieceColor::White, PieceType::Bishop),
+            'R' => Piece::new(PieceColor::White, PieceType::Rook),
+            'Q' => Piece::new(PieceColor::White, PieceType::Queen),
+            'K' => Piece::new(PieceColor::White, PieceType::King),
+            _ => panic!("cant parse char '{}' as piece", c),
+        }
+    }
 }
 
 impl string::ToString for Piece {
@@ -206,6 +223,56 @@ impl BoardState {
             PieceColor::Black => true,
         }
     }
+    pub fn from_fen(fen: &str) -> BoardState {
+        let mut space_splitter = fen.split_whitespace();
+        let pieces_str = space_splitter.next().unwrap();
+        let turn_str = space_splitter.next().unwrap();
+        let castling_str = space_splitter.next().unwrap();
+        let en_passant_str = space_splitter.next().unwrap();
+        // fullmove and halfmove number are ignored becuase they arent used
+        let mut ranks_str = pieces_str.split("/");
+        let mut pieces = [[None::<Piece>; 8]; 8];
+        for y in (0..8).rev() {
+            let mut rank_chars = ranks_str.next().unwrap().chars();
+            let mut x = 0;
+            loop {
+                let piece_char_option = rank_chars.next();
+                if let Some(piece_char) = piece_char_option {
+                    let piece_number_option = piece_char.to_string().parse::<u8>();
+                    if let Ok(n) = piece_number_option {
+                        x += n;
+                    } else {
+                        pieces[y as usize][x as usize] = Some(Piece::from_fen_char(piece_char));
+                        x += 1;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        let color_turn = match turn_str {
+            "w" => PieceColor::White,
+            "b" => PieceColor::Black,
+            _ => panic!("invalid fen color turn"),
+        };
+        let white_king_castle = castling_str.contains("K");
+        let white_queen_castle = castling_str.contains("Q");
+        let black_king_castle = castling_str.contains("k");
+        let black_queen_castle = castling_str.contains("q");
+        let en_passant_colunm = match en_passant_str {
+            "-" => 55,
+            _ => BoardPosition::from_text(en_passant_str).x,
+        };
+        BoardState {
+            pieces,
+            color_turn,
+            white_king_castle,
+            white_queen_castle,
+            black_king_castle,
+            black_queen_castle,
+            en_passant_colunm,
+        }
+    }
 }
 
 impl fmt::Debug for BoardState {
@@ -245,157 +312,6 @@ impl fmt::Debug for BoardState {
 
 impl Default for BoardState {
     fn default() -> BoardState {
-        BoardState {
-            color_turn: PieceColor::White,
-            en_passant_colunm: 55,
-            white_king_castle: true,
-            white_queen_castle: true,
-            black_king_castle: true,
-            black_queen_castle: true,
-            pieces: {
-                [
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Rook,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Queen,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::King,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Rook,
-                            color: PieceColor::White,
-                        }),
-                    ],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::White,
-                        }),
-                    ],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [None, None, None, None, None, None, None, None],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Pawn,
-                            color: PieceColor::Black,
-                        }),
-                    ],
-                    [
-                        Some(Piece {
-                            piece_type: PieceType::Rook,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Queen,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::King,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Bishop,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Knight,
-                            color: PieceColor::Black,
-                        }),
-                        Some(Piece {
-                            piece_type: PieceType::Rook,
-                            color: PieceColor::Black,
-                        }),
-                    ],
-                ]
-            },
-        }
+        BoardState::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     }
 }

@@ -112,7 +112,6 @@ impl Action {
     }
 }
 pub fn find_legal_actions(board_state: &BoardState) -> Vec<Action> {
-    println!("{:?}", board_state);
     let mut legal_actions = Vec::with_capacity(35);
     action_rules::PawnActions::update_actions(&board_state, &mut legal_actions);
     action_rules::KnightActions::update_actions(&board_state, &mut legal_actions);
