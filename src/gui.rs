@@ -1,6 +1,6 @@
 use crate::{
-    rules::color_in_check, BoardPosition, BoardState, MoveType, Piece, PieceColor, PieceSetImages,
-    PossibleMove, PossibleMoveIter,
+    find_legal_actions, Action, ActionType, BoardPosition, BoardState, Piece, PieceColor,
+    PieceSetImages,
 };
 use dialog::DialogBox;
 use ggez::{
@@ -29,7 +29,7 @@ fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
             (x / BOARD_POS_SIZE as f32) as u8,
             (y / BOARD_POS_SIZE as f32) as u8,
         );
-        if board_pos.is_valid() {
+        if board_pos.bound_check() {
             let inverted_board_pos = BoardPosition::new(board_pos.x, 7 - board_pos.y);
             Some(inverted_board_pos)
         } else {
@@ -52,8 +52,8 @@ pub struct GUIState {
     white_piece_images: PieceSetImages,
     black_piece_images: PieceSetImages,
     board_image: graphics::Image,
-    possible_moves_from_selection: Vec<PossiblePlayerMove>,
-    pending_move: Option<PossibleMove>,
+    possible_moves_from_selection: Vec<PlayerAction>,
+    pending_move: Option<Action>,
 }
 impl GUIState {
     pub fn new(
@@ -71,7 +71,7 @@ impl GUIState {
         }
     }
 
-    pub fn check_for_move(&mut self) -> Option<PossibleMove> {
+    pub fn check_for_action(&mut self) -> Option<Action> {
         let pending_move = self.pending_move;
         self.pending_move = None;
         pending_move
@@ -181,26 +181,19 @@ impl GUIState {
     fn select(&mut self, pos: BoardPosition, board_state: &BoardState) {
         self.sellection = Sellection::Selected(pos);
 
-        let all_possible_moves =
-            PossibleMoveIter::find_possible_moves(board_state, PieceColor::White);
+        let all_possible_actions = find_legal_actions(board_state);
 
-        for possible_move in all_possible_moves {
-            let player_possible_move = PossiblePlayerMove::from(possible_move);
-            let mut possible_new_board_state = board_state.clone();
-            possible_move.play_move(&mut possible_new_board_state, PieceColor::White);
-            // if this move is from the selected position and does not leave the player in check
-            if player_possible_move.from == pos
-                && !color_in_check(&possible_new_board_state, PieceColor::White)
-            {
-                self.possible_moves_from_selection
-                    .push(player_possible_move);
+        for action in all_possible_actions {
+            let player_action = PlayerAction::from(action);
+            if player_action.from == pos {
+                self.possible_moves_from_selection.push(player_action);
             }
         }
     }
     fn try_move_to(&mut self, pos: BoardPosition) -> bool {
         for possible_move in self.possible_moves_from_selection.iter() {
             if possible_move.to == pos {
-                self.pending_move = Some(possible_move.this_move);
+                self.pending_move = Some(possible_move.this_action);
                 return true;
             }
         }
@@ -212,53 +205,39 @@ impl GUIState {
     }
 }
 
-struct PossiblePlayerMove {
-    this_move: PossibleMove,
+struct PlayerAction {
+    this_action: Action,
     // the "to" and "from" are the squares that you have to click on to make the piece move
     from: BoardPosition,
     to: BoardPosition,
 }
 
-impl PossiblePlayerMove {
-    pub fn from(the_move: PossibleMove) -> PossiblePlayerMove {
-        PossiblePlayerMove {
-            this_move: the_move,
-            from: PossiblePlayerMove::find_from(the_move.get_move_type()),
-            to: PossiblePlayerMove::find_to(the_move.get_move_type()),
+impl PlayerAction {
+    pub fn from(action: Action) -> PlayerAction {
+        PlayerAction {
+            this_action: action,
+            from: PlayerAction::find_from(action),
+            to: PlayerAction::find_to(action),
         }
     }
-    fn find_from(move_type: MoveType) -> BoardPosition {
-        match move_type {
-            MoveType::SimpleMove {
-                from,
-                to: _,
-                piece: _,
-                cancel_king_castle: _,
-                cancel_queen_castle: _,
-                pawn_move_two: _,
-            } => from,
-            MoveType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
-            MoveType::EnPassant { from, to: _ } => from,
+    fn find_from(action: Action) -> BoardPosition {
+        match action.get_action_type() {
+            ActionType::SimpleMove { from, to: _ } => from,
+            ActionType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
+            ActionType::EnPassant { from, to: _ } => from,
         }
     }
-    fn find_to(move_type: MoveType) -> BoardPosition {
-        match move_type {
-            MoveType::SimpleMove {
-                from: _,
-                to,
-                piece: _,
-                cancel_king_castle: _,
-                cancel_queen_castle: _,
-                pawn_move_two: _,
-            } => to,
-            MoveType::Castling { kings_side } => {
+    fn find_to(action: Action) -> BoardPosition {
+        match action.get_action_type() {
+            ActionType::SimpleMove { from: _, to } => to,
+            ActionType::Castling { kings_side } => {
                 if kings_side {
                     BoardPosition::new(6, 0)
                 } else {
                     BoardPosition::new(2, 0)
                 }
             }
-            MoveType::EnPassant { from: _, to } => to,
+            ActionType::EnPassant { from: _, to } => to,
         }
     }
 }
@@ -272,6 +251,12 @@ pub fn show_player_wins_message() {
 pub fn show_computer_wins_message() {
     dialog::Message::new("Computer Won. :(")
         .title("Computer Won")
+        .show()
+        .expect("Could not display dialog box");
+}
+pub fn show_draw_message() {
+    dialog::Message::new("You drew with the computer.")
+        .title("Draw")
         .show()
         .expect("Could not display dialog box");
 }

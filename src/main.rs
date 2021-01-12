@@ -1,11 +1,13 @@
+mod actions;
 mod board_state;
-mod chess_AI;
+mod evaluator;
 mod gui;
+mod minimax;
 mod resource_loader;
-mod rules;
 
-pub use board_state::{BoardPosition, BoardState, Piece, PieceColor, PieceType};
-pub use rules::{color_in_check_mate, MoveType, PossibleMove, PossibleMoveIter};
+pub use actions::{find_legal_actions, in_check, in_check_mate, Action, ActionType};
+pub use board_state::{BoardPosition, BoardState, Capturable, Piece, PieceColor, PieceType};
+pub use evaluator::{Evaluator, Score};
 
 use ggez::{
     event::{self, EventHandler, MouseButton},
@@ -61,23 +63,35 @@ impl ChessGame {
 
 impl EventHandler for ChessGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        if let Some(player_move) = self.gui_state.check_for_move() {
-            player_move.play_move(&mut self.board_state, PieceColor::White);
+        if let Some(player_action) = self.gui_state.check_for_action() {
+            player_action.play_move(&mut self.board_state);
             self.draw(ctx).unwrap();
 
-            if color_in_check_mate(&self.board_state, PieceColor::Black) {
+            if in_check_mate(&self.board_state) {
                 gui::show_player_wins_message();
                 ggez::event::quit(ctx);
             } else {
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                let ai_move = chess_AI::find_best_move(&self.board_state);
-                ai_move.play_move(&mut self.board_state, PieceColor::Black);
-                self.draw(ctx).unwrap();
-                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
-
-                if color_in_check_mate(&self.board_state, PieceColor::White) {
-                    gui::show_computer_wins_message();
-                    ggez::event::quit(ctx);
+                let ai_action = minimax::find_move_with_minimax(&self.board_state, 4);
+                if let Some(action) = ai_action {
+                    action.play_move(&mut self.board_state);
+                    self.draw(ctx).unwrap();
+                    ggez::input::mouse::set_cursor_type(
+                        ctx,
+                        ggez::input::mouse::MouseCursor::Default,
+                    );
+                    if find_legal_actions(&self.board_state).is_empty() {
+                        gui::show_draw_message();
+                        ggez::event::quit(ctx);
+                    }
+                } else {
+                    if in_check_mate(&self.board_state) {
+                        gui::show_computer_wins_message();
+                        ggez::event::quit(ctx);
+                    } else {
+                        gui::show_draw_message();
+                        ggez::event::quit(ctx);
+                    }
                 }
             }
         }
