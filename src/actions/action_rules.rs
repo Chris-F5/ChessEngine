@@ -1,6 +1,6 @@
 use crate::{
-    find_legal_actions, Action, ActionType, BoardPosition, BoardState, Capturable, PieceColor,
-    PieceType,
+    find_legal_actions, Action, ActionType, BoardPosition, BoardState, Capturable, Piece,
+    PieceColor, PieceType,
 };
 
 pub trait ActionRule {
@@ -395,8 +395,81 @@ impl ActionRule for KingActions {
         }
     }
 }
-pub struct RemoveIllegalactions;
-impl ActionRule for RemoveIllegalactions {
+pub struct CastlingActions;
+impl CastlingActions {
+    fn positions_in_check(board_state: &BoardState, positions: Vec<BoardPosition>) -> bool {
+        debug_assert!(positions.len() > 0);
+        // TODO: optomise by reversing search?
+
+        let mut board_state = board_state.clone();
+
+        // fill with kings so pawns can capture
+        for position in positions.clone() {
+            *board_state.get_mut(position) =
+                Some(Piece::new(board_state.color_turn, PieceType::King));
+        }
+        let mut possible_opponent_moves = Vec::new();
+        PawnActions::update_actions(&board_state, &mut possible_opponent_moves);
+        KnightActions::update_actions(&board_state, &mut possible_opponent_moves);
+        DiagonalActions::update_actions(&board_state, &mut possible_opponent_moves);
+        StraightActions::update_actions(&board_state, &mut possible_opponent_moves);
+        KingActions::update_actions(&board_state, &mut possible_opponent_moves);
+        for possible_move in possible_opponent_moves {
+            match possible_move.action_type {
+                ActionType::SimpleMove { from: _, to } => {
+                    for king_pos in positions.clone() {
+                        if king_pos == to {
+                            return true;
+                        }
+                    }
+                }
+                _ => (),
+            }
+        }
+        return false;
+    }
+}
+impl ActionRule for CastlingActions {
+    fn update_actions(board_state: &BoardState, actions: &mut Vec<Action>) {
+        if board_state.color_turn == PieceColor::White {
+            if board_state.white_king_castle {
+                if !Self::positions_in_check(
+                    &board_state,
+                    vec![BoardPosition::new(4, 0), BoardPosition::new(5, 0)],
+                ) {
+                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
+                }
+            }
+            if board_state.white_queen_castle {
+                if !Self::positions_in_check(
+                    &board_state,
+                    vec![BoardPosition::new(4, 0), BoardPosition::new(3, 0)],
+                ) {
+                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
+                }
+            }
+        } else {
+            if board_state.black_king_castle {
+                if !Self::positions_in_check(
+                    &board_state,
+                    vec![BoardPosition::new(4, 7), BoardPosition::new(5, 7)],
+                ) {
+                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
+                }
+            }
+            if board_state.black_queen_castle {
+                if !Self::positions_in_check(
+                    &board_state,
+                    vec![BoardPosition::new(4, 7), BoardPosition::new(3, 7)],
+                ) {
+                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
+                }
+            }
+        }
+    }
+}
+pub struct RemoveIllegalActions;
+impl ActionRule for RemoveIllegalActions {
     fn update_actions(board_state: &BoardState, actions: &mut Vec<Action>) {
         actions.retain(|action| {
             let mut new_board_state = board_state.clone();

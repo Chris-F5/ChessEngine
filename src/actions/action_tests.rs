@@ -84,3 +84,31 @@ fn queening_test() {
         "f1",
     );
 }
+
+#[test]
+fn castling() {
+    let white_king_castled = test_move(
+        BoardState::from_fen("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"),
+        Action::new(ActionType::Castling { kings_side: true }),
+    );
+    assert!(
+        white_king_castled
+            .get(BoardPosition::from_text("g1"))
+            .unwrap()
+            .piece_type
+            == PieceType::King,
+    );
+    assert!(
+        white_king_castled
+            .get(BoardPosition::from_text("f1"))
+            .unwrap()
+            .piece_type
+            == PieceType::Rook,
+    );
+    assert!(white_king_castled
+        .get(BoardPosition::from_text("e1"))
+        .is_none());
+    assert!(white_king_castled
+        .get(BoardPosition::from_text("h1"))
+        .is_none());
+}

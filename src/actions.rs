@@ -118,7 +118,8 @@ pub fn find_legal_actions(board_state: &BoardState) -> Vec<Action> {
     action_rules::DiagonalActions::update_actions(&board_state, &mut legal_actions);
     action_rules::StraightActions::update_actions(&board_state, &mut legal_actions);
     action_rules::KingActions::update_actions(&board_state, &mut legal_actions);
-    action_rules::RemoveIllegalactions::update_actions(&board_state, &mut legal_actions);
+    action_rules::CastlingActions::update_actions(&board_state, &mut legal_actions);
+    action_rules::RemoveIllegalActions::update_actions(&board_state, &mut legal_actions);
     legal_actions
 }
 
