@@ -12,9 +12,9 @@ impl Evaluator {
                 let piece_option = board_state.get(BoardPosition::new(x, y));
                 if let Some(piece) = piece_option {
                     let color_multiplier = if let PieceColor::White = piece.color {
-                        -1
-                    } else {
                         1
+                    } else {
+                        -1
                     };
                     match piece.piece_type {
                         PieceType::Pawn => score += 1 * color_multiplier,

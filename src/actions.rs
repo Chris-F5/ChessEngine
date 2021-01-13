@@ -156,18 +156,23 @@ pub fn in_check(board_state: &BoardState) -> bool {
     }
 }
 
-pub fn in_check_mate(board_state: &BoardState) -> bool {
-    // TODO: optomize?
+pub enum GameEndState {
+    Win(PieceColor),
+    Draw,
+}
 
+pub fn check_for_game_end(board_state: &BoardState) -> Option<GameEndState> {
     // if Im in check and I cant play any moves then Im in checkmate
 
     if find_legal_actions(board_state).is_empty() {
+        let opponent_color = board_state.color_turn.opposite_color();
         let mut opponent_turn_board_state = board_state.clone();
-        opponent_turn_board_state.color_turn =
-            opponent_turn_board_state.color_turn.opposite_color();
+        opponent_turn_board_state.color_turn = opponent_color;
         if in_check(&opponent_turn_board_state) {
-            return true;
+            return Some(GameEndState::Win(opponent_color));
+        } else {
+            return Some(GameEndState::Draw);
         }
     }
-    return false;
+    return None;
 }

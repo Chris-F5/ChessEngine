@@ -5,7 +5,9 @@ mod gui;
 mod minimax;
 mod resource_loader;
 
-pub use actions::{find_legal_actions, in_check, in_check_mate, Action, ActionType};
+pub use actions::{
+    check_for_game_end, find_legal_actions, in_check, Action, ActionType, GameEndState,
+};
 pub use board_state::{BoardPosition, BoardState, Capturable, Piece, PieceColor, PieceType};
 pub use evaluator::{Evaluator, Score};
 
@@ -50,20 +52,43 @@ struct ChessGame {
 
 impl ChessGame {
     pub fn new(ctx: &mut Context) -> ChessGame {
-        ChessGame {
-            board_state: BoardState::default(),
+        let new_game = ChessGame {
+            board_state: BoardState::from_fen(
+                "r1bqk1nr/ppp1bppp/3p4/8/2PQP3/1P6/P4PPP/RNB1KB1R b KQkq - 0 1",
+            ),
             gui_state: GUIState::new(
                 resource_loader::load_white_piece_set(ctx),
                 resource_loader::load_black_piece_set(ctx),
                 resource_loader::load_board_image(ctx),
             ),
+        };
+        new_game
+    }
+    fn play_move(&mut self, action: Action, ctx: &mut Context) {
+        action.play_move(&mut self.board_state);
+        if let Some(game_end) = check_for_game_end(&self.board_state) {
+            self.draw(ctx).unwrap();
+            match game_end {
+                GameEndState::Draw => {
+                    gui::show_draw_message();
+                    ggez::event::quit(ctx);
+                }
+                GameEndState::Win(PieceColor::White) => {
+                    gui::show_player_wins_message();
+                    ggez::event::quit(ctx);
+                }
+                GameEndState::Win(PieceColor::Black) => {
+                    gui::show_computer_wins_message();
+                    ggez::event::quit(ctx);
+                }
+            }
         }
     }
 }
 
 impl EventHandler for ChessGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        if let Some(player_action) = self.gui_state.check_for_action() {
+        /*if let Some(player_action) = self.gui_state.check_for_action() {
             player_action.play_move(&mut self.board_state);
             self.draw(ctx).unwrap();
 
@@ -93,6 +118,19 @@ impl EventHandler for ChessGame {
                         ggez::event::quit(ctx);
                     }
                 }
+            }
+        }*/
+        match self.board_state.color_turn {
+            PieceColor::White => {
+                if let Some(action) = self.gui_state.check_for_action() {
+                    self.play_move(action, ctx);
+                }
+            }
+            PieceColor::Black => {
+                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
+                let action = minimax::find_move_with_minimax(&self.board_state, 4).unwrap();
+                self.play_move(action, ctx);
+                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
             }
         }
         Ok(())
