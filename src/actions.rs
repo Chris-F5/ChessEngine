@@ -111,7 +111,10 @@ impl Action {
         self.action_type
     }
 }
-pub fn find_legal_actions(board_state: &BoardState) -> Vec<Action> {
+pub fn find_legal_actions(
+    board_state: &BoardState,
+    safe: bool,
+) -> (Vec<Action>, Option<GameEndState>) {
     let mut legal_actions = Vec::with_capacity(35);
     action_rules::PawnActions::update_actions(&board_state, &mut legal_actions);
     action_rules::KnightActions::update_actions(&board_state, &mut legal_actions);
@@ -120,7 +123,22 @@ pub fn find_legal_actions(board_state: &BoardState) -> Vec<Action> {
     action_rules::KingActions::update_actions(&board_state, &mut legal_actions);
     action_rules::CastlingActions::update_actions(&board_state, &mut legal_actions);
     action_rules::RemoveIllegalActions::update_actions(&board_state, &mut legal_actions);
-    legal_actions
+    if safe {
+        action_rules::RemoveUnsafeActions::update_actions(&board_state, &mut legal_actions);
+    }
+    let game_end_state_option = if legal_actions.is_empty() {
+        let opponent_color = board_state.color_turn.opposite_color();
+        let mut opponent_turn_board_state = board_state.clone();
+        opponent_turn_board_state.color_turn = opponent_color;
+        if in_check(&opponent_turn_board_state) {
+            Some(GameEndState::Win(opponent_color))
+        } else {
+            Some(GameEndState::Draw)
+        }
+    } else {
+        None
+    };
+    (legal_actions, game_end_state_option)
 }
 
 pub fn in_check(board_state: &BoardState) -> bool {
@@ -139,7 +157,7 @@ pub fn in_check(board_state: &BoardState) -> bool {
     }
 
     if let Some(king_pos) = king_pos {
-        let possible_opponent_moves = find_legal_actions(&board_state);
+        let possible_opponent_moves = find_legal_actions(&board_state, false).0;
         for possible_move in possible_opponent_moves {
             match possible_move.action_type {
                 ActionType::SimpleMove { from: _, to } => {
@@ -159,20 +177,4 @@ pub fn in_check(board_state: &BoardState) -> bool {
 pub enum GameEndState {
     Win(PieceColor),
     Draw,
-}
-
-pub fn check_for_game_end(board_state: &BoardState) -> Option<GameEndState> {
-    // if Im in check and I cant play any moves then Im in checkmate
-
-    if find_legal_actions(board_state).is_empty() {
-        let opponent_color = board_state.color_turn.opposite_color();
-        let mut opponent_turn_board_state = board_state.clone();
-        opponent_turn_board_state.color_turn = opponent_color;
-        if in_check(&opponent_turn_board_state) {
-            return Some(GameEndState::Win(opponent_color));
-        } else {
-            return Some(GameEndState::Draw);
-        }
-    }
-    return None;
 }

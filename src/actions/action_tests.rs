@@ -2,7 +2,7 @@ use super::find_legal_actions;
 use crate::{Action, ActionType, BoardPosition, BoardState, Piece, PieceColor, PieceType};
 
 fn test_move(board_state: BoardState, action: Action) -> BoardState {
-    let legal_moves = find_legal_actions(&board_state);
+    let legal_moves = find_legal_actions(&board_state, false).0;
     assert!(
         legal_moves.contains(&action),
         format!(

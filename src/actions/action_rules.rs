@@ -515,3 +515,18 @@ pub fn in_check(board_state: &BoardState) -> bool {
         panic!("this color has no king {:?}", board_state);
     }
 }
+pub struct RemoveUnsafeActions;
+impl RemoveUnsafeActions {
+    fn is_safe(action: &Action, board_state: &BoardState) -> bool {
+        match action.action_type {
+            ActionType::SimpleMove { from: _, to } => board_state.get(to).is_none(),
+            ActionType::EnPassant { from: _, to: _ } => false,
+            ActionType::Castling { kings_side: _ } => true,
+        }
+    }
+}
+impl ActionRule for RemoveUnsafeActions {
+    fn update_actions(board_state: &BoardState, actions: &mut Vec<Action>) {
+        actions.retain(|action| Self::is_safe(&action, board_state));
+    }
+}

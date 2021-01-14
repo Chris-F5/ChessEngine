@@ -5,9 +5,7 @@ mod gui;
 mod minimax;
 mod resource_loader;
 
-pub use actions::{
-    check_for_game_end, find_legal_actions, in_check, Action, ActionType, GameEndState,
-};
+pub use actions::{find_legal_actions, in_check, Action, ActionType, GameEndState};
 pub use board_state::{BoardPosition, BoardState, Capturable, Piece, PieceColor, PieceType};
 pub use evaluator::{Evaluator, Score};
 
@@ -53,9 +51,13 @@ struct ChessGame {
 impl ChessGame {
     pub fn new(ctx: &mut Context) -> ChessGame {
         let new_game = ChessGame {
-            board_state: BoardState::from_fen(
-                "r1bqk1nr/ppp1bppp/3p4/8/2PQP3/1P6/P4PPP/RNB1KB1R b KQkq - 0 1",
-            ),
+            board_state: BoardState::default(),
+            //::from_fen(
+            //"r2qk3/4b1p1/3p4/8/P2QP3/8/8/R3K3 b Qq - 0 1",
+            //"r1bq1knr/ppp1bppp/3p4/8/2PQ4/1P6/P4PPP/RNB1KB1R b KQ - 0 1",
+            //"k6B/8/4P3/3r4/2p5/8/8/7K b - - 0 1",
+            //"4r1k1/p4ppp/2p5/2pp4/6b1/3P4/PPP5/RNB1r1RK w - - 0 22",
+            //),
             gui_state: GUIState::new(
                 resource_loader::load_white_piece_set(ctx),
                 resource_loader::load_black_piece_set(ctx),
@@ -66,7 +68,7 @@ impl ChessGame {
     }
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         action.play_move(&mut self.board_state);
-        if let Some(game_end) = check_for_game_end(&self.board_state) {
+        if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
             self.draw(ctx).unwrap();
             match game_end {
                 GameEndState::Draw => {

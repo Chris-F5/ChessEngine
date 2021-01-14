@@ -181,7 +181,7 @@ impl GUIState {
     fn select(&mut self, pos: BoardPosition, board_state: &BoardState) {
         self.sellection = Sellection::Selected(pos);
 
-        let all_possible_actions = find_legal_actions(board_state);
+        let all_possible_actions = find_legal_actions(board_state, false).0;
 
         for action in all_possible_actions {
             let player_action = PlayerAction::from(action);
