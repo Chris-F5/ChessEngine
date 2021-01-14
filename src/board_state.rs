@@ -149,26 +149,23 @@ impl Piece {
             _ => panic!("cant parse char '{}' as piece", c),
         }
     }
-}
-
-impl string::ToString for Piece {
-    fn to_string(&self) -> String {
+    pub fn to_unicode_char(&self) -> char {
         match self.color {
             PieceColor::White => match self.piece_type {
-                PieceType::Pawn => String::from("P"),
-                PieceType::Bishop => String::from("B"),
-                PieceType::Knight => String::from("N"),
-                PieceType::Rook => String::from("R"),
-                PieceType::Queen => String::from("Q"),
-                PieceType::King => String::from("K"),
+                PieceType::Pawn => '♙',
+                PieceType::Knight => '♘',
+                PieceType::Bishop => '♗',
+                PieceType::Rook => '♖',
+                PieceType::Queen => '♕',
+                PieceType::King => '♔',
             },
             PieceColor::Black => match self.piece_type {
-                PieceType::Pawn => String::from("p"),
-                PieceType::Bishop => String::from("b"),
-                PieceType::Knight => String::from("n"),
-                PieceType::Rook => String::from("r"),
-                PieceType::Queen => String::from("q"),
-                PieceType::King => String::from("k"),
+                PieceType::Pawn => '♟',
+                PieceType::Knight => '♞',
+                PieceType::Bishop => '♝',
+                PieceType::Rook => '♜',
+                PieceType::Queen => '♛',
+                PieceType::King => '♚',
             },
         }
     }
@@ -284,7 +281,7 @@ impl fmt::Debug for BoardState {
             for x in 0..8 {
                 let piece = self.get(BoardPosition::new(x, y));
                 match piece {
-                    Some(p) => board_string.push_str(&*p.to_string()),
+                    Some(p) => board_string.push(p.to_unicode_char()),
                     None => board_string.push_str("-"),
                 }
                 if x != 7 {
