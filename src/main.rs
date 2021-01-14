@@ -68,6 +68,7 @@ impl ChessGame {
     }
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         action.play_move(&mut self.board_state);
+        println!("{}", Evaluator::full_evaluate(&self.board_state));
         println!("{:?}", self.board_state);
         if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
             self.draw(ctx).unwrap();
