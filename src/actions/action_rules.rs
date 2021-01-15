@@ -1,6 +1,5 @@
 use crate::{
-    find_legal_actions, Action, ActionType, BoardPosition, BoardState, Capturable, Piece,
-    PieceColor, PieceType,
+    Action, ActionType, BoardPosition, BoardState, Capturable, Piece, PieceColor, PieceType,
 };
 
 pub trait ActionRule {

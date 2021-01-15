@@ -1,4 +1,3 @@
-use crate::in_check;
 use crate::{find_legal_actions, Action, BoardState, Evaluator, GameEndState, PieceColor, Score};
 
 pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Action> {
@@ -7,7 +6,6 @@ pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Act
     let mut alpha = Evaluator::score_for_checkmate(PieceColor::White);
     let mut best_move = None;
     let legal_actions = find_legal_actions(&board_state, false).0;
-    // TODO: sort actions based on quick evaluate
     for action in legal_actions {
         let mut new_board_state = board_state.clone();
         action.play_move(&mut new_board_state);

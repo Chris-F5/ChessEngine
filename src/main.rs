@@ -52,12 +52,6 @@ impl ChessGame {
     pub fn new(ctx: &mut Context) -> ChessGame {
         let new_game = ChessGame {
             board_state: BoardState::default(),
-            //::from_fen(
-            //"r2qk3/4b1p1/3p4/8/P2QP3/8/8/R3K3 b Qq - 0 1",
-            //"r1bq1knr/ppp1bppp/3p4/8/2PQ4/1P6/P4PPP/RNB1KB1R b KQ - 0 1",
-            //"k6B/8/4P3/3r4/2p5/8/8/7K b - - 0 1",
-            //"4r1k1/p4ppp/2p5/2pp4/6b1/3P4/PPP5/RNB1r1RK w - - 0 22",
-            //),
             gui_state: GUIState::new(
                 resource_loader::load_white_piece_set(ctx),
                 resource_loader::load_black_piece_set(ctx),
@@ -92,38 +86,6 @@ impl ChessGame {
 
 impl EventHandler for ChessGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        /*if let Some(player_action) = self.gui_state.check_for_action() {
-            player_action.play_move(&mut self.board_state);
-            self.draw(ctx).unwrap();
-
-            if in_check_mate(&self.board_state) {
-                gui::show_player_wins_message();
-                ggez::event::quit(ctx);
-            } else {
-                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                let ai_action = minimax::find_move_with_minimax(&self.board_state, 4);
-                if let Some(action) = ai_action {
-                    action.play_move(&mut self.board_state);
-                    self.draw(ctx).unwrap();
-                    ggez::input::mouse::set_cursor_type(
-                        ctx,
-                        ggez::input::mouse::MouseCursor::Default,
-                    );
-                    if find_legal_actions(&self.board_state).is_empty() {
-                        gui::show_draw_message();
-                        ggez::event::quit(ctx);
-                    }
-                } else {
-                    if in_check_mate(&self.board_state) {
-                        gui::show_computer_wins_message();
-                        ggez::event::quit(ctx);
-                    } else {
-                        gui::show_draw_message();
-                        ggez::event::quit(ctx);
-                    }
-                }
-            }
-        }*/
         match self.board_state.color_turn {
             PieceColor::White => {
                 if let Some(action) = self.gui_state.check_for_action() {

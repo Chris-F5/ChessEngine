@@ -1,5 +1,4 @@
 use std::fmt;
-use std::string;
 
 pub trait Capturable {
     fn can_take(&self, color: PieceColor) -> bool;
