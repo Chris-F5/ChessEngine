@@ -94,7 +94,7 @@ impl EventHandler for ChessGame {
             }
             PieceColor::Black => {
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                let action = minimax::find_move_with_minimax(&self.board_state, 4).unwrap();
+                let action = minimax::find_move_with_minimax(&self.board_state, 8).unwrap();
                 self.play_move(action, ctx);
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
             }

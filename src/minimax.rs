@@ -6,7 +6,10 @@ pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Act
     let mut alpha = Evaluator::score_for_checkmate(PieceColor::White);
     let mut best_move = None;
     let legal_actions = find_legal_actions(&board_state, false).0;
+    let length = legal_actions.len();
+    let mut i = 0;
     for action in legal_actions {
+        println!("{}/{}", i, length);
         let mut new_board_state = board_state.clone();
         action.play_move(&mut new_board_state);
         // TODO: varable depth
@@ -15,6 +18,7 @@ pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Act
             alpha = score;
             best_move = Some(action);
         }
+        i += 1;
     }
     best_move
 }
@@ -44,15 +48,17 @@ fn min(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
         possible_board_states[i].1 = Evaluator::quick_evaluate(&possible_board_states[i].0);
     }
     possible_board_states.sort_by(|a, b| a.1.cmp(&b.1));
+    let mut i = 0;
     for new_board_state in possible_board_states {
-        // TODO: varable depth
-        let score = max(&new_board_state.0, depth - 1, alpha, beta);
+        let depth_loss = depth_loss(i, depth);
+        let score = max(&new_board_state.0, depth - depth_loss, alpha, beta);
         if score <= alpha {
             return alpha;
         }
         if score < beta {
             beta = score;
         }
+        i += 1;
     }
     return beta;
 }
@@ -82,15 +88,26 @@ fn max(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
     }
     possible_board_states.sort_by(|a, b| b.1.cmp(&a.1));
 
+    let mut i = 0;
     for new_board_state in possible_board_states {
-        // TODO: varable depth
-        let score = min(&new_board_state.0, depth - 1, alpha, beta);
+        let depth_loss = depth_loss(i, depth);
+        let score = min(&new_board_state.0, depth - depth_loss, alpha, beta);
         if score >= beta {
             return beta;
         }
         if score > alpha {
             alpha = score;
         }
+        i += 1;
     }
     return alpha;
+}
+fn depth_loss(i: u16, depth: u8) -> u8 {
+    if i < 3 || depth < 2 {
+        1
+    } else if i < 5 || depth < 3 {
+        2
+    } else {
+        3
+    }
 }
