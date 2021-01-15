@@ -38,12 +38,17 @@ fn min(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
             GameEndState::Win(color) => Evaluator::score_for_checkmate(color),
         };
     }
-    // TODO: sort actions based on quick evaluate
-    for action in legal_actions {
-        let mut new_board_state = board_state.clone();
-        action.play_move(&mut new_board_state);
+    let mut possible_board_states: Vec<(BoardState, Score)> =
+        Vec::with_capacity(legal_actions.len());
+    for i in 0..legal_actions.len() {
+        possible_board_states.push((board_state.clone(), 0));
+        legal_actions[i].play_move(&mut possible_board_states[i].0);
+        possible_board_states[i].1 = Evaluator::quick_evaluate(&possible_board_states[i].0);
+    }
+    possible_board_states.sort_by(|a, b| a.1.cmp(&b.1));
+    for new_board_state in possible_board_states {
         // TODO: varable depth
-        let score = max(&new_board_state, depth - 1, alpha, beta);
+        let score = max(&new_board_state.0, depth - 1, alpha, beta);
         if score <= alpha {
             return alpha;
         }
@@ -70,12 +75,18 @@ fn max(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
             GameEndState::Win(color) => Evaluator::score_for_checkmate(color),
         };
     }
-    // TODO: sort actions based on quick evaluate
-    for action in legal_actions {
-        let mut new_board_state = board_state.clone();
-        action.play_move(&mut new_board_state);
+    let mut possible_board_states: Vec<(BoardState, Score)> =
+        Vec::with_capacity(legal_actions.len());
+    for i in 0..legal_actions.len() {
+        possible_board_states.push((board_state.clone(), 0));
+        legal_actions[i].play_move(&mut possible_board_states[i].0);
+        possible_board_states[i].1 = Evaluator::quick_evaluate(&possible_board_states[i].0);
+    }
+    possible_board_states.sort_by(|a, b| b.1.cmp(&a.1));
+
+    for new_board_state in possible_board_states {
         // TODO: varable depth
-        let score = min(&new_board_state, depth - 1, alpha, beta);
+        let score = min(&new_board_state.0, depth - 1, alpha, beta);
         if score >= beta {
             return beta;
         }
