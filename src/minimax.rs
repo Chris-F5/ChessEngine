@@ -1,6 +1,13 @@
 use crate::{find_legal_actions, Action, BoardState, Evaluator, GameEndState, PieceColor, Score};
 
-pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Action> {
+pub fn find_move_with_minimax<F>(
+    board_state: &BoardState,
+    depth: u8,
+    progress_update: &mut F,
+) -> Option<Action>
+where
+    F: FnMut(f32),
+{
     assert!(depth != 0, "root depth for minimax cant be 0");
     let beta = Evaluator::score_for_checkmate(PieceColor::Black);
     let mut alpha = Evaluator::score_for_checkmate(PieceColor::White);
@@ -10,6 +17,8 @@ pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Act
     let mut i = 0;
     for action in legal_actions {
         println!("{}/{}", i, length);
+        progress_update(i as f32 / length as f32);
+
         let mut new_board_state = board_state.clone();
         action.play_move(&mut new_board_state);
         // TODO: varable depth
@@ -20,6 +29,7 @@ pub fn find_move_with_minimax(board_state: &BoardState, depth: u8) -> Option<Act
         }
         i += 1;
     }
+    progress_update(1.0);
     best_move
 }
 

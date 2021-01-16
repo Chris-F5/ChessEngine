@@ -13,12 +13,9 @@ use ggez::{
     event::{self, EventHandler, MouseButton},
     graphics, Context, ContextBuilder, GameResult,
 };
-use gui::GUIState;
+use gui::{GUIState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use resource_loader::PieceSetImages;
 use std::{env, path};
-
-const WINDOW_WIDTH: f32 = 620.0;
-const WINDOW_HEIGHT: f32 = 620.0;
 
 fn main() {
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
@@ -94,7 +91,13 @@ impl EventHandler for ChessGame {
             }
             PieceColor::Black => {
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                let action = minimax::find_move_with_minimax(&self.board_state, 8).unwrap();
+                let board_state = self.board_state.clone();
+                let mut progress_update = |percentage: f32| {
+                    self.gui_state.update_progress_bar(percentage);
+                    self.draw(ctx).unwrap();
+                };
+                let action =
+                    minimax::find_move_with_minimax(&board_state, 8, &mut progress_update).unwrap();
                 self.play_move(action, ctx);
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
             }
@@ -105,6 +108,7 @@ impl EventHandler for ChessGame {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
         self.gui_state.draw(ctx, &self.board_state);
+        //GUIState::update_progress_bar(ctx, 0.7);
         graphics::present(ctx)
     }
 

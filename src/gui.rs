@@ -12,9 +12,15 @@ use ggez::{
 const PIECE_SCALE: f32 = 0.9;
 const BOARD_SIZE: f32 = 600.0;
 const BOARD_POS_SIZE: f32 = BOARD_SIZE / 8.0;
-const BOARD_X_OFSET: f32 = 10.0;
-const BOARD_Y_OFSET: f32 = 10.0;
+const BOARD_MARGINS: f32 = 10.0;
 const HIGHLIGHT_COLOR: graphics::Color = graphics::Color::new(1.0, 1.0, 1.0, 0.3);
+const PROGRESS_BAR_HEIGHT: f32 = 20.0;
+const PROGRESS_BAR_Y_MARGINS: f32 = 0.0;
+const PROGRESS_BAR_X_MARGINS: f32 = 10.0;
+
+pub const WINDOW_WIDTH: f32 = BOARD_SIZE + 2.0 * BOARD_MARGINS;
+pub const WINDOW_HEIGHT: f32 =
+    BOARD_SIZE + BOARD_MARGINS + 2.0 * PROGRESS_BAR_Y_MARGINS + PROGRESS_BAR_HEIGHT;
 
 enum Sellection {
     None,
@@ -22,8 +28,8 @@ enum Sellection {
 }
 
 fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
-    let x = x - BOARD_X_OFSET;
-    let y = y - BOARD_Y_OFSET;
+    let x = x - BOARD_MARGINS;
+    let y = y - BOARD_MARGINS;
     if x > 0.0 && y > 0.0 {
         let board_pos = BoardPosition::new(
             (x / BOARD_POS_SIZE as f32) as u8,
@@ -42,8 +48,8 @@ fn screen_space_to_board_pos(x: f32, y: f32) -> Option<BoardPosition> {
 
 fn board_pos_to_screen_space(board_pos: BoardPosition) -> (f32, f32) {
     (
-        board_pos.x as f32 * BOARD_POS_SIZE + BOARD_X_OFSET,
-        (7 - board_pos.y) as f32 * BOARD_POS_SIZE + BOARD_Y_OFSET,
+        board_pos.x as f32 * BOARD_POS_SIZE + BOARD_MARGINS,
+        (7 - board_pos.y) as f32 * BOARD_POS_SIZE + BOARD_MARGINS,
     )
 }
 
@@ -54,6 +60,7 @@ pub struct GUIState {
     board_image: graphics::Image,
     possible_moves_from_selection: Vec<PlayerAction>,
     pending_move: Option<Action>,
+    progress_bar_percentage: f32,
 }
 impl GUIState {
     pub fn new(
@@ -68,6 +75,7 @@ impl GUIState {
             board_image,
             possible_moves_from_selection: Vec::with_capacity(20),
             pending_move: None,
+            progress_bar_percentage: 1.0,
         }
     }
 
@@ -87,13 +95,14 @@ impl GUIState {
         self.draw_board(ctx);
         self.draw_highlighted_squares(ctx);
         self.draw_pieces(ctx, board_state);
+        self.draw_progress_bar(ctx);
     }
     fn draw_board(&self, ctx: &mut Context) {
         graphics::draw(
             ctx,
             &self.board_image,
             graphics::DrawParam::new()
-                .dest(Point2::new(BOARD_X_OFSET, BOARD_Y_OFSET))
+                .dest(Point2::new(BOARD_MARGINS, BOARD_MARGINS))
                 .scale(Vector2::new(
                     BOARD_SIZE / self.board_image.width() as f32,
                     BOARD_SIZE / self.board_image.height() as f32,
@@ -202,6 +211,30 @@ impl GUIState {
     fn deselect(&mut self) {
         self.sellection = Sellection::None;
         self.possible_moves_from_selection.clear();
+    }
+    pub fn update_progress_bar(&mut self, percentage: f32) {
+        assert!(percentage >= 0.0 && percentage <= 1.0);
+        self.progress_bar_percentage = percentage;
+    }
+    fn draw_progress_bar(&self, ctx: &mut Context) {
+        assert!(self.progress_bar_percentage >= 0.0 && self.progress_bar_percentage <= 1.0);
+        let rect_mesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            graphics::Rect::new(
+                PROGRESS_BAR_X_MARGINS,
+                BOARD_MARGINS + BOARD_SIZE + PROGRESS_BAR_Y_MARGINS,
+                (WINDOW_WIDTH - (2.0 * PROGRESS_BAR_X_MARGINS)) * self.progress_bar_percentage,
+                PROGRESS_BAR_HEIGHT,
+            ),
+            if self.progress_bar_percentage == 1.0 {
+                graphics::Color::new(50.0 / 255.0, 168.0 / 255.0, 82.0 / 255.0, 1.0)
+            } else {
+                graphics::Color::new(217.0 / 255.0, 123.0 / 255.0, 35.0 / 255.0, 1.0)
+            },
+        )
+        .unwrap();
+        graphics::draw(ctx, &rect_mesh, graphics::DrawParam::new()).unwrap();
     }
 }
 
