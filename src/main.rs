@@ -48,7 +48,7 @@ struct ChessGame {
 impl ChessGame {
     pub fn new(ctx: &mut Context) -> ChessGame {
         let new_game = ChessGame {
-            board_state: BoardState::default(),
+            board_state: BoardState::from_fen("3kr3/4r3/8/8/8/8/7K/8 w - - 0 1"), //BoardState::default(),
             gui_state: GUIState::new(
                 resource_loader::load_white_piece_set(ctx),
                 resource_loader::load_black_piece_set(ctx),
@@ -97,7 +97,7 @@ impl EventHandler for ChessGame {
                     self.draw(ctx).unwrap();
                 };
                 let action =
-                    minimax::find_move_with_minimax(&board_state, 8, &mut progress_update).unwrap();
+                    minimax::find_move_with_minimax(&board_state, 7, &mut progress_update).unwrap();
                 self.play_move(action, ctx);
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
             }

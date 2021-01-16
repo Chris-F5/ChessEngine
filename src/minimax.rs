@@ -35,10 +35,6 @@ where
 
 fn min(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score {
     let mut beta = beta;
-    if depth == 0 {
-        return Evaluator::full_evaluate(&board_state);
-    }
-
     let (legal_actions, game_end_option) = if depth == 1 {
         find_legal_actions(&board_state, true)
     } else {
@@ -47,9 +43,20 @@ fn min(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
     if let Some(game_end) = game_end_option {
         return match game_end {
             GameEndState::Draw => Evaluator::score_for_draw(),
-            GameEndState::Win(color) => Evaluator::score_for_checkmate(color),
+            GameEndState::Win(PieceColor::White) => {
+                Evaluator::score_for_checkmate(PieceColor::White)
+            }
+            GameEndState::Win(PieceColor::Black) => {
+                // Prioritise nearer checkmates
+                (Evaluator::score_for_checkmate(PieceColor::Black) - 100) + depth as i16
+            }
         };
     }
+
+    if depth == 0 {
+        return Evaluator::full_evaluate(&board_state);
+    }
+
     let mut possible_board_states: Vec<(BoardState, Score)> =
         Vec::with_capacity(legal_actions.len());
     for i in 0..legal_actions.len() {
@@ -75,9 +82,6 @@ fn min(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
 
 fn max(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score {
     let mut alpha = alpha;
-    if depth == 0 {
-        return Evaluator::full_evaluate(&board_state);
-    }
     let (legal_actions, game_end_option) = if depth == 1 {
         find_legal_actions(&board_state, true)
     } else {
@@ -86,8 +90,17 @@ fn max(board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score 
     if let Some(game_end) = game_end_option {
         return match game_end {
             GameEndState::Draw => Evaluator::score_for_draw(),
-            GameEndState::Win(color) => Evaluator::score_for_checkmate(color),
+            GameEndState::Win(PieceColor::White) => {
+                Evaluator::score_for_checkmate(PieceColor::White)
+            }
+            GameEndState::Win(PieceColor::Black) => {
+                // Prioritise nearer checkmates
+                (Evaluator::score_for_checkmate(PieceColor::Black) - 100) + depth as i16
+            }
         };
+    }
+    if depth == 0 {
+        return Evaluator::full_evaluate(&board_state);
     }
     let mut possible_board_states: Vec<(BoardState, Score)> =
         Vec::with_capacity(legal_actions.len());
