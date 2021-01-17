@@ -431,38 +431,48 @@ impl CastlingActions {
 impl ActionRule for CastlingActions {
     fn update_actions(board_state: &BoardState, actions: &mut Vec<Action>) {
         if board_state.color_turn == PieceColor::White {
-            if board_state.white_king_castle {
-                if !Self::positions_in_check(
+            if board_state.white_king_castle
+                && board_state.get(BoardPosition::new(5, 0)).is_none()
+                && board_state.get(BoardPosition::new(6, 0)).is_none()
+                && !Self::positions_in_check(
                     &board_state,
                     vec![BoardPosition::new(4, 0), BoardPosition::new(5, 0)],
-                ) {
-                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
-                }
+                )
+            {
+                actions.push(Action::new(ActionType::Castling { kings_side: true }));
             }
-            if board_state.white_queen_castle {
-                if !Self::positions_in_check(
+            if board_state.white_queen_castle
+                && board_state.get(BoardPosition::new(3, 0)).is_none()
+                && board_state.get(BoardPosition::new(2, 0)).is_none()
+                && board_state.get(BoardPosition::new(1, 0)).is_none()
+                && !Self::positions_in_check(
                     &board_state,
                     vec![BoardPosition::new(4, 0), BoardPosition::new(3, 0)],
-                ) {
-                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
-                }
+                )
+            {
+                actions.push(Action::new(ActionType::Castling { kings_side: false }));
             }
         } else {
-            if board_state.black_king_castle {
-                if !Self::positions_in_check(
+            if board_state.black_king_castle
+                && board_state.get(BoardPosition::new(5, 7)).is_none()
+                && board_state.get(BoardPosition::new(6, 7)).is_none()
+                && !Self::positions_in_check(
                     &board_state,
                     vec![BoardPosition::new(4, 7), BoardPosition::new(5, 7)],
-                ) {
-                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
-                }
+                )
+            {
+                actions.push(Action::new(ActionType::Castling { kings_side: true }));
             }
-            if board_state.black_queen_castle {
-                if !Self::positions_in_check(
+            if board_state.black_queen_castle
+                && board_state.get(BoardPosition::new(3, 7)).is_none()
+                && board_state.get(BoardPosition::new(2, 7)).is_none()
+                && board_state.get(BoardPosition::new(1, 7)).is_none()
+                && !Self::positions_in_check(
                     &board_state,
                     vec![BoardPosition::new(4, 7), BoardPosition::new(3, 7)],
-                ) {
-                    actions.push(Action::new(ActionType::Castling { kings_side: true }));
-                }
+                )
+            {
+                actions.push(Action::new(ActionType::Castling { kings_side: false }));
             }
         }
     }

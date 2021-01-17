@@ -70,7 +70,7 @@ impl Action {
                                 }
                             }
                         } else {
-                            if from.y == 0 {
+                            if from.y == 7 {
                                 if from.x == 0 {
                                     board_state.black_queen_castle = false;
                                 } else if from.x == 7 {
@@ -84,7 +84,15 @@ impl Action {
                 *board_state.get_mut(to) = result_piece;
             }
             ActionType::Castling { kings_side } => {
-                let y_row = if color == PieceColor::White { 0 } else { 7 };
+                let y_row = if color == PieceColor::White {
+                    board_state.white_king_castle = false;
+                    board_state.white_queen_castle = false;
+                    0
+                } else {
+                    board_state.black_king_castle = false;
+                    board_state.black_queen_castle = false;
+                    7
+                };
                 *board_state.get_mut(BoardPosition::new(4, y_row)) = None;
                 if kings_side {
                     *board_state.get_mut(BoardPosition::new(7, y_row)) = None;
