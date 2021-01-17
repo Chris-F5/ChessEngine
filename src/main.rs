@@ -1,14 +1,13 @@
 mod actions;
+mod best_action_finder;
 mod board_state;
-mod evaluator;
 mod gui;
-mod minimax;
 mod resource_loader;
 
 pub use actions::{find_legal_actions, in_check, Action, ActionType, GameEndState};
 pub use board_state::{BoardPosition, BoardState, Capturable, Piece, PieceColor, PieceType};
-pub use evaluator::{Evaluator, Score};
 
+use best_action_finder::BestActionFinder;
 use ggez::{
     event::{self, EventHandler, MouseButton},
     graphics, Context, ContextBuilder, GameResult,
@@ -43,23 +42,24 @@ fn main() {
 struct ChessGame {
     board_state: BoardState,
     gui_state: GUIState,
+    chess_computer: BestActionFinder,
 }
 
 impl ChessGame {
     pub fn new(ctx: &mut Context) -> ChessGame {
         let new_game = ChessGame {
-            board_state: BoardState::from_fen("3kr3/4r3/8/8/8/8/7K/8 w - - 0 1"), //BoardState::default(),
+            board_state: BoardState::default(),
             gui_state: GUIState::new(
                 resource_loader::load_white_piece_set(ctx),
                 resource_loader::load_black_piece_set(ctx),
                 resource_loader::load_board_image(ctx),
             ),
+            chess_computer: BestActionFinder::new(),
         };
         new_game
     }
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         action.play_move(&mut self.board_state);
-        println!("{}", Evaluator::full_evaluate(&self.board_state));
         println!("{:?}", self.board_state);
         if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
             self.draw(ctx).unwrap();
@@ -93,11 +93,13 @@ impl EventHandler for ChessGame {
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
                 let board_state = self.board_state.clone();
                 let mut progress_update = |percentage: f32| {
-                    self.gui_state.update_progress_bar(percentage);
-                    self.draw(ctx).unwrap();
+                    /*self.gui_state.update_progress_bar(percentage);
+                    self.draw(ctx).unwrap();*/
                 };
-                let action =
-                    minimax::find_move_with_minimax(&board_state, 7, &mut progress_update).unwrap();
+                let action = self
+                    .chess_computer
+                    .find_best_move(&board_state, &mut progress_update)
+                    .unwrap();
                 self.play_move(action, ctx);
                 ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
             }

@@ -174,6 +174,7 @@ pub fn in_check(board_state: &BoardState) -> bool {
     }
 }
 
+#[derive(Debug)]
 pub enum GameEndState {
     Win(PieceColor),
     Draw,

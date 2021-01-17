@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 ggez = "0.5.1"
 dialog = "0.3.0"
+shakmaty-syzygy = "0.14.0"
+shakmaty = "0.17.1"

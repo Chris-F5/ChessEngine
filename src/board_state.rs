@@ -78,6 +78,31 @@ impl BoardPosition {
         };
         BoardPosition { x: x, y: y }
     }
+    pub fn to_text(&self) -> String {
+        let file = match self.x {
+            0 => 'a',
+            1 => 'b',
+            2 => 'c',
+            3 => 'd',
+            4 => 'e',
+            5 => 'f',
+            6 => 'g',
+            7 => 'h',
+            _ => panic!("invalid board position"),
+        };
+        let rank = match self.y {
+            0 => '1',
+            1 => '2',
+            2 => '3',
+            3 => '4',
+            4 => '5',
+            5 => '6',
+            6 => '7',
+            7 => '8',
+            _ => panic!("invalid board position"),
+        };
+        format!("{}{}", file, rank).to_string()
+    }
     pub fn bound_check(&self) -> bool {
         self.x <= 7 && self.y <= 7
     }
@@ -168,6 +193,26 @@ impl Piece {
             },
         }
     }
+    pub fn to_fen_char(&self) -> char {
+        match self.color {
+            PieceColor::White => match self.piece_type {
+                PieceType::Pawn => 'P',
+                PieceType::Knight => 'N',
+                PieceType::Bishop => 'B',
+                PieceType::Rook => 'R',
+                PieceType::Queen => 'Q',
+                PieceType::King => 'K',
+            },
+            PieceColor::Black => match self.piece_type {
+                PieceType::Pawn => 'p',
+                PieceType::Knight => 'n',
+                PieceType::Bishop => 'b',
+                PieceType::Rook => 'r',
+                PieceType::Queen => 'q',
+                PieceType::King => 'k',
+            },
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -218,6 +263,38 @@ impl BoardState {
             PieceColor::White => false,
             PieceColor::Black => true,
         }
+    }
+    pub fn to_fen(&self) -> String {
+        let mut board_string = String::with_capacity(62);
+        for y in (0..8).rev() {
+            for x in 0..8 {
+                let piece_option = self.get(BoardPosition::new(x, y));
+                board_string.push(match piece_option {
+                    None => '1',
+                    Some(piece) => piece.to_fen_char(),
+                })
+            }
+            if y != 0 {
+                board_string.push('/');
+            }
+        }
+        format!(
+            "{} {} - {} 0 0",
+            board_string,
+            match self.color_turn {
+                PieceColor::White => "w",
+                PieceColor::Black => "b",
+            },
+            if self.en_passant_colunm < 8 {
+                match self.color_turn {
+                    PieceColor::White => BoardPosition::new(self.en_passant_colunm, 5).to_text(),
+                    PieceColor::Black => BoardPosition::new(self.en_passant_colunm, 2).to_text(),
+                }
+            } else {
+                "-".to_string()
+            }
+        )
+        .to_string()
     }
     pub fn from_fen(fen: &str) -> BoardState {
         let mut space_splitter = fen.split_whitespace();
