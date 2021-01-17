@@ -400,12 +400,14 @@ impl CastlingActions {
         debug_assert!(positions.len() > 0);
         // TODO: optomise by reversing search?
 
+        let color = board_state.color_turn;
+
         let mut board_state = board_state.clone();
+        board_state.color_turn = color.opposite_color();
 
         // fill with kings so pawns can capture
         for position in positions.clone() {
-            *board_state.get_mut(position) =
-                Some(Piece::new(board_state.color_turn, PieceType::King));
+            *board_state.get_mut(position) = Some(Piece::new(color, PieceType::King));
         }
         let mut possible_opponent_moves = Vec::new();
         PawnActions::update_actions(&board_state, &mut possible_opponent_moves);

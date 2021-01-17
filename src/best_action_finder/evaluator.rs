@@ -123,15 +123,7 @@ impl Evaluator {
                 Some(GameEndState::Win(color)) => Some(self.score_for_checkmate(color)),
                 None => match self.endgame_tables.evaluate_state(board_state) {
                     None => None,
-                    Some(score) => {
-                        println!(
-                            "{} {:?} {:?}",
-                            score,
-                            board_state.color_turn,
-                            self.endgame_tables.win_loss_check(board_state)
-                        );
-                        Some(score)
-                    }
+                    Some(score) => Some(score),
                 },
             }
         } else {
