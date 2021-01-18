@@ -10,7 +10,9 @@ pub use board_state::{BoardPosition, BoardState, Capturable, Piece, PieceColor, 
 use best_action_finder::BestActionFinder;
 use ggez::{
     event::{self, EventHandler, MouseButton},
-    graphics, Context, ContextBuilder, GameResult,
+    graphics,
+    input::mouse::set_cursor_type,
+    Context, ContextBuilder, GameResult,
 };
 use gui::{GUIState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use resource_loader::PieceSetImages;
@@ -90,18 +92,23 @@ impl EventHandler for ChessGame {
                 }
             }
             PieceColor::Black => {
-                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                let board_state = self.board_state.clone();
-                let mut progress_update = |percentage: f32| {
-                    /*self.gui_state.update_progress_bar(percentage);
-                    self.draw(ctx).unwrap();*/
-                };
-                let action = self
-                    .chess_computer
-                    .find_best_move(&board_state, &mut progress_update)
-                    .unwrap();
-                self.play_move(action, ctx);
-                ggez::input::mouse::set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
+                let chess_computer_state = self.chess_computer.get_state();
+                match chess_computer_state {
+                    best_action_finder::State::Idle => {
+                        set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
+                        self.chess_computer.start_finding_move(&self.board_state);
+                    }
+                    best_action_finder::State::Thinking(progress) => {
+                        self.gui_state.update_progress_bar(progress)
+                    }
+                    best_action_finder::State::Finished(Err(err)) => {
+                        panic!("error finding move: {}", err)
+                    }
+                    best_action_finder::State::Finished(Ok(action)) => {
+                        set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
+                        self.play_move(action, ctx)
+                    }
+                }
             }
         }
         Ok(())

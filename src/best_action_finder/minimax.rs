@@ -14,11 +14,20 @@ impl<'a> Minimax<'a> {
             evaluator,
         }
     }
-    pub fn find_maximising_move(&self, board_state: &BoardState) -> Option<Action> {
+    pub fn find_maximising_move<F>(
+        &self,
+        board_state: &BoardState,
+        update_progress: &mut F,
+    ) -> Result<Action, &'static str>
+    where
+        F: FnMut(f32),
+    {
         let beta = Score::MAX;
         let mut alpha = Score::MIN;
         let mut best_move = None;
         let legal_actions = find_legal_actions(&board_state, false).0;
+        let mut action_number = 0;
+        let action_count = legal_actions.len();
         for action in legal_actions {
             let mut new_board_state = board_state.clone();
             action.play_move(&mut new_board_state);
@@ -27,8 +36,13 @@ impl<'a> Minimax<'a> {
                 alpha = score;
                 best_move = Some(action);
             }
+            action_number += 1;
+            update_progress(action_number as f32 / action_count as f32);
         }
-        best_move
+        match best_move {
+            Some(best_move) => Ok(best_move),
+            None => Err("cant minimax an illegal board state"),
+        }
     }
 
     fn min(&self, board_state: &BoardState, depth: u8, alpha: Score, beta: Score) -> Score {
