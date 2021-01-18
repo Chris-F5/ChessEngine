@@ -95,14 +95,14 @@ impl Evaluator {
         score += self.square_tables(board_state);
         score
     }
-    pub fn score_for_draw(&self) -> Score {
-        0
-    }
-    pub fn score_for_checkmate(&self, color: PieceColor) -> Score {
+    pub fn score_for_checkmate(&self, color: PieceColor, moves_until: u8) -> Score {
         match color {
-            PieceColor::White => Score::MIN,
-            PieceColor::Black => Score::MAX,
+            PieceColor::White => Score::MIN + moves_until as i16,
+            PieceColor::Black => Score::MAX - moves_until as i16,
         }
+    }
+    pub fn is_in_endgame(&self, board_state: &BoardState) -> bool {
+        self.endgame_tables.win_loss_check(board_state).is_some()
     }
     fn count_pieces(&self, board_state: &BoardState) -> u8 {
         let mut count = 0;
@@ -120,7 +120,8 @@ impl Evaluator {
             let (_, game_end_state) = find_legal_actions(board_state, false);
             match game_end_state {
                 Some(GameEndState::Draw) => Some(0),
-                Some(GameEndState::Win(color)) => Some(self.score_for_checkmate(color)),
+                // we dont know how long it will take to get in checkmate so we just guess 100 so others will take priority
+                Some(GameEndState::Win(color)) => Some(self.score_for_checkmate(color, 100)),
                 None => match self.endgame_tables.evaluate_state(board_state) {
                     None => None,
                     Some(score) => Some(score),

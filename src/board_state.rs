@@ -121,7 +121,7 @@ impl BoardPosition {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Eq)]
 pub enum PieceColor {
     White,
     Black,
@@ -136,7 +136,7 @@ impl PieceColor {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum PieceType {
     Pawn,
     Bishop,
@@ -146,7 +146,7 @@ pub enum PieceType {
     King,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: PieceColor,
@@ -215,7 +215,7 @@ impl Piece {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq)]
 pub struct BoardState {
     pieces: [[Option<Piece>; 8]; 8],
     pub white_king_castle: bool,

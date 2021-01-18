@@ -110,7 +110,6 @@ impl EventHandler for ChessGame {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
         self.gui_state.draw(ctx, &self.board_state);
-        //GUIState::update_progress_bar(ctx, 0.7);
         graphics::present(ctx)
     }
 

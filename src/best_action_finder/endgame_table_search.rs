@@ -2,7 +2,7 @@ use super::Score;
 use crate::{BoardState, GameEndState, PieceColor};
 use shakmaty::fen::Fen;
 use shakmaty::{CastlingMode, Chess};
-use shakmaty_syzygy::{Dtz, Syzygy, Tablebase, Wdl};
+use shakmaty_syzygy::{Tablebase, Wdl};
 use std::{env, path};
 
 pub struct EndgameTableSearcher {

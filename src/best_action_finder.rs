@@ -2,18 +2,18 @@ mod endgame_table_search;
 mod evaluator;
 mod minimax;
 
-pub use endgame_table_search::EndgameTableSearcher;
-pub use evaluator::{Evaluator, Score};
-
 use crate::{Action, BoardState};
+use endgame_table_search::EndgameTableSearcher;
+use evaluator::{Evaluator, Score};
+use minimax::Minimax;
 
 pub struct BestActionFinder {
-    tables: EndgameTableSearcher,
+    evaluator: Evaluator,
 }
 impl BestActionFinder {
     pub fn new() -> BestActionFinder {
         BestActionFinder {
-            tables: EndgameTableSearcher::new(),
+            evaluator: Evaluator::new(EndgameTableSearcher::new()),
         }
     }
     pub fn find_best_move<F>(
@@ -26,24 +26,15 @@ impl BestActionFinder {
     {
         progress_update(0.0);
 
-        if self.tables.win_loss_check(board_state).is_some() {
-            // endgame
+        if self.evaluator.is_in_endgame(board_state) {
             println!("endgame search");
-            minimax::find_move_with_minimax(
-                board_state,
-                1,
-                &Evaluator::new(EndgameTableSearcher::new()),
-                progress_update,
-            )
+            // Depth of one is required because the endgame tables do all the hard work in the endgame
+            let minimax = Minimax::new(1, &self.evaluator);
+            minimax.find_maximising_move(board_state)
         } else {
-            // not endgame
             println!("non-endgame search");
-            minimax::find_move_with_minimax(
-                board_state,
-                7,
-                &Evaluator::new(EndgameTableSearcher::new()),
-                progress_update,
-            )
+            let minimax = Minimax::new(7, &self.evaluator);
+            minimax.find_maximising_move(board_state)
         }
     }
 }
