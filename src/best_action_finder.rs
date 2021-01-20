@@ -47,7 +47,9 @@ impl BestActionFinder {
     fn action_finding_loop(state_sender: Sender<State>, board_receiver: Receiver<BoardState>) {
         let evaluator = Evaluator::new(EndgameTableSearcher::new());
         loop {
-            let board_state = board_receiver.recv().unwrap();
+            let board_state = board_receiver.recv().expect(
+                "There was an error with the action finding thread. Try restarting the program.",
+            );
             let mut update_progress = |progress: f32| {
                 state_sender.send(State::Thinking(progress)).unwrap();
             };

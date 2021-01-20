@@ -62,6 +62,7 @@ impl ChessGame {
     }
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         action.play_move(&mut self.board_state);
+        self.gui_state.update_last_played_move(Some(action));
         println!("{:?}", self.board_state);
         if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
             self.draw(ctx).unwrap();
@@ -121,7 +122,7 @@ impl EventHandler for ChessGame {
     }
 
     fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-        if button == MouseButton::Left {
+        if button == MouseButton::Left && self.board_state.color_turn == PieceColor::White {
             self.gui_state.click(x, y, &self.board_state);
         }
     }
