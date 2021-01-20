@@ -1,4 +1,5 @@
 use std::fmt;
+use std::hash::Hash;
 
 pub trait Capturable {
     fn can_take(&self, color: PieceColor) -> bool;
@@ -121,7 +122,7 @@ impl BoardPosition {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Debug, Eq)]
+#[derive(Copy, Clone, PartialEq, Debug, Eq, Hash)]
 pub enum PieceColor {
     White,
     Black,
@@ -136,7 +137,7 @@ impl PieceColor {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PieceType {
     Pawn,
     Bishop,
@@ -146,7 +147,7 @@ pub enum PieceType {
     King,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Piece {
     pub piece_type: PieceType,
     pub color: PieceColor,
@@ -215,7 +216,7 @@ impl Piece {
     }
 }
 
-#[derive(Clone, Eq)]
+#[derive(Clone, Eq, Hash)]
 pub struct BoardState {
     pieces: [[Option<Piece>; 8]; 8],
     pub white_king_castle: bool,
