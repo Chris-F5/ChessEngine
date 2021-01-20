@@ -97,9 +97,9 @@ impl GUIState {
         }
     }
 
-    pub fn update_last_played_move(&mut self, action: Option<Action>) {
+    pub fn update_last_played_move(&mut self, action: Option<Action>, color: PieceColor) {
         self.last_played_move = match action {
-            Some(action) => Some(PlayerAction::new(action)),
+            Some(action) => Some(PlayerAction::new(action, color)),
             None => None,
         }
     }
@@ -247,7 +247,7 @@ impl GUIState {
         let all_possible_actions = find_legal_actions(board_state, false).0;
 
         for action in all_possible_actions {
-            let player_action = PlayerAction::new(action);
+            let player_action = PlayerAction::new(action, board_state.color_turn);
             if player_action.from == pos {
                 self.possible_moves_from_selection.push(player_action);
             }
@@ -300,28 +300,35 @@ struct PlayerAction {
 }
 
 impl PlayerAction {
-    pub fn new(action: Action) -> PlayerAction {
+    pub fn new(action: Action, color: PieceColor) -> PlayerAction {
         PlayerAction {
             this_action: action,
-            from: PlayerAction::find_from(action),
-            to: PlayerAction::find_to(action),
+            from: PlayerAction::find_from(action, color),
+            to: PlayerAction::find_to(action, color),
         }
     }
-    fn find_from(action: Action) -> BoardPosition {
+    fn find_from(action: Action, color: PieceColor) -> BoardPosition {
         match action.get_action_type() {
             ActionType::SimpleMove { from, to: _ } => from,
-            ActionType::Castling { kings_side: _ } => BoardPosition::new(4, 0),
+            ActionType::Castling { kings_side: _ } => match color {
+                PieceColor::White => BoardPosition::new(4, 0),
+                PieceColor::Black => BoardPosition::new(4, 7),
+            },
             ActionType::EnPassant { from, to: _ } => from,
         }
     }
-    fn find_to(action: Action) -> BoardPosition {
+    fn find_to(action: Action, color: PieceColor) -> BoardPosition {
         match action.get_action_type() {
             ActionType::SimpleMove { from: _, to } => to,
             ActionType::Castling { kings_side } => {
+                let rank = match color {
+                    PieceColor::White => 0,
+                    PieceColor::Black => 7,
+                };
                 if kings_side {
-                    BoardPosition::new(6, 0)
+                    BoardPosition::new(6, rank)
                 } else {
-                    BoardPosition::new(2, 0)
+                    BoardPosition::new(2, rank)
                 }
             }
             ActionType::EnPassant { from: _, to } => to,

@@ -61,8 +61,9 @@ impl ChessGame {
         new_game
     }
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
+        self.gui_state
+            .update_last_played_move(Some(action), self.board_state.color_turn);
         action.play_move(&mut self.board_state);
-        self.gui_state.update_last_played_move(Some(action));
         println!("{:?}", self.board_state);
         if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
             self.draw(ctx).unwrap();
