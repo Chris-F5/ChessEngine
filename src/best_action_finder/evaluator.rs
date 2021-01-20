@@ -120,8 +120,7 @@ impl Evaluator {
             let (_, game_end_state) = find_legal_actions(board_state, false);
             match game_end_state {
                 Some(GameEndState::Draw) => Some(0),
-                // we dont know how long it will take to get in checkmate so we just guess 100 so others will take priority
-                Some(GameEndState::Win(color)) => Some(self.score_for_checkmate(color, 100)),
+                Some(GameEndState::Win(color)) => Some(self.score_for_checkmate(color, 0)),
                 None => match self.endgame_tables.evaluate_state(board_state) {
                     None => None,
                     Some(score) => Some(score),
