@@ -45,6 +45,7 @@ struct ChessGame {
     board_state: BoardState,
     gui_state: GUIState,
     chess_computer: BestActionFinder,
+    game_over: bool,
 }
 
 impl ChessGame {
@@ -57,6 +58,7 @@ impl ChessGame {
                 resource_loader::load_board_image(ctx),
             ),
             chess_computer: BestActionFinder::new(),
+            game_over: false,
         };
         new_game
     }
@@ -70,45 +72,45 @@ impl ChessGame {
             match game_end {
                 GameEndState::Draw => {
                     gui::show_draw_message();
-                    ggez::event::quit(ctx);
                 }
                 GameEndState::Win(PieceColor::White) => {
                     gui::show_player_wins_message();
-                    ggez::event::quit(ctx);
                 }
                 GameEndState::Win(PieceColor::Black) => {
                     gui::show_computer_wins_message();
-                    ggez::event::quit(ctx);
                 }
             }
+            self.game_over = true
         }
     }
 }
 
 impl EventHandler for ChessGame {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        match self.board_state.color_turn {
-            PieceColor::White => {
-                if let Some(action) = self.gui_state.check_for_action() {
-                    self.play_move(action, ctx);
+        if !self.game_over {
+            match self.board_state.color_turn {
+                PieceColor::White => {
+                    if let Some(action) = self.gui_state.check_for_action() {
+                        self.play_move(action, ctx);
+                    }
                 }
-            }
-            PieceColor::Black => {
-                let chess_computer_state = self.chess_computer.get_state();
-                match chess_computer_state {
-                    best_action_finder::State::Idle => {
-                        set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
-                        self.chess_computer.start_finding_move(&self.board_state);
-                    }
-                    best_action_finder::State::Thinking(progress) => {
-                        self.gui_state.update_progress_bar(progress)
-                    }
-                    best_action_finder::State::Finished(Err(err)) => {
-                        panic!("error finding move: {}", err)
-                    }
-                    best_action_finder::State::Finished(Ok(action)) => {
-                        set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
-                        self.play_move(action, ctx)
+                PieceColor::Black => {
+                    let chess_computer_state = self.chess_computer.get_state();
+                    match chess_computer_state {
+                        best_action_finder::State::Idle => {
+                            set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Wait);
+                            self.chess_computer.start_finding_move(&self.board_state);
+                        }
+                        best_action_finder::State::Thinking(progress) => {
+                            self.gui_state.update_progress_bar(progress)
+                        }
+                        best_action_finder::State::Finished(Err(err)) => {
+                            panic!("error finding move: {}", err)
+                        }
+                        best_action_finder::State::Finished(Ok(action)) => {
+                            set_cursor_type(ctx, ggez::input::mouse::MouseCursor::Default);
+                            self.play_move(action, ctx)
+                        }
                     }
                 }
             }
@@ -123,7 +125,10 @@ impl EventHandler for ChessGame {
     }
 
     fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-        if button == MouseButton::Left && self.board_state.color_turn == PieceColor::White {
+        if button == MouseButton::Left
+            && self.board_state.color_turn == PieceColor::White
+            && !self.game_over
+        {
             self.gui_state.click(x, y, &self.board_state);
         }
     }
