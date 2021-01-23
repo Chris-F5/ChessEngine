@@ -64,12 +64,10 @@ impl BestActionFinder {
                         Ok(action)
                     } else {
                         let action_result = if evaluator.is_in_endgame(&board_state) {
-                            println!("endgame search");
                             // Depth of one is required because the endgame tables do all the hard work in the endgame
                             let minimax = Minimax::new(1, &evaluator);
                             minimax.find_maximising_move(&board_state, &mut update_progress)
                         } else {
-                            println!("non-endgame search");
                             let minimax = Minimax::new(7, &evaluator);
                             minimax.find_maximising_move(&board_state, &mut update_progress)
                         };

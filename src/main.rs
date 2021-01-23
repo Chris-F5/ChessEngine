@@ -27,6 +27,9 @@ fn main() {
 
     let mut game = ChessGame::new(&mut ctx);
 
+    println!("Chess Engine Project | Created by Christopher Lang for his computer science EPQ");
+    println!("End game tables by Massimiliano Goi - https://chess.massimilianogoi.com/download/tablebases/");
+
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
@@ -58,6 +61,8 @@ impl ChessGame {
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         self.gui_state
             .update_last_played_move(Some(action), self.board_state.color_turn);
+        println!("");
+        println!("{:?} moved", self.board_state.color_turn);
         action.play_move(&mut self.board_state);
         println!("{:?}", self.board_state);
         if let Some(game_end) = find_legal_actions(&self.board_state, false).1 {
