@@ -27,7 +27,7 @@ impl EndgameTableSearcher {
         let fen_str = board_state.to_fen();
         let parsed_fen = fen_str.parse::<Fen>();
         match parsed_fen {
-            Err(err) => {
+            Err(_) => {
                 println!("error passing fen");
                 None
             }
@@ -45,7 +45,7 @@ impl EndgameTableSearcher {
                 Ok(Wdl::BlessedLoss) => {
                     Some(GameEndState::Win(board_state.color_turn.opposite_color()))
                 }
-                Err(err) => None,
+                Err(_) => None,
             },
         }
     }
@@ -54,7 +54,7 @@ impl EndgameTableSearcher {
             None => None,
             Some(shakmaty_state) => match self.tables.probe_dtz(&shakmaty_state) {
                 Ok(dtz) => {
-                    let mut dtz = dtz.0 as Score;
+                    let dtz = dtz.0 as Score;
                     if board_state.color_turn == PieceColor::White {
                         if dtz > 0 {
                             Some(Score::MIN + dtz)
@@ -73,7 +73,7 @@ impl EndgameTableSearcher {
                         }
                     }
                 }
-                Err(err) => None,
+                Err(_) => None,
             },
         }
     }

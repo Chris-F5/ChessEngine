@@ -15,19 +15,16 @@ pub struct BestActionFinder {
     state_receiver: Receiver<State>,
     command_sender: Sender<Command>,
     state: State,
-    best_action_finder_thread: thread::JoinHandle<()>,
 }
 impl BestActionFinder {
     pub fn new() -> BestActionFinder {
         let (command_sender, command_receiver) = channel();
         let (state_sender, state_receiver) = channel();
-        let best_action_finder_thread =
-            thread::spawn(move || Self::action_finding_loop(state_sender, command_receiver));
+        thread::spawn(move || Self::action_finding_loop(state_sender, command_receiver));
         BestActionFinder {
             state: State::Idle,
             command_sender,
             state_receiver,
-            best_action_finder_thread,
         }
     }
     pub fn start_finding_move(&mut self, board_state: &BoardState) {
