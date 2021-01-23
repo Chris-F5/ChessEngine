@@ -15,27 +15,19 @@ use ggez::{
     Context, ContextBuilder, GameResult,
 };
 use gui::{GUIState, WINDOW_HEIGHT, WINDOW_WIDTH};
-use resource_loader::PieceSetImages;
-use std::{env, path};
+use resource_loader::{get_resource_path, PieceSetImages};
 
 fn main() {
-    let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
-        let mut path = path::PathBuf::from(manifest_dir);
-        path.push("resources");
-        path
-    } else {
-        path::PathBuf::from("./resources")
-    };
     let (mut ctx, mut event_loop) = ContextBuilder::new("chess engine", "Christopher Lang")
         .window_setup(ggez::conf::WindowSetup::default().title("Chess Engine"))
         .window_mode(ggez::conf::WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT))
-        .add_resource_path(resource_dir)
+        .add_resource_path(get_resource_path())
         .build()
         .expect("error creating ggez context");
 
-    let mut my_game = ChessGame::new(&mut ctx);
+    let mut game = ChessGame::new(&mut ctx);
 
-    match event::run(&mut ctx, &mut event_loop, &mut my_game) {
+    match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
     }
@@ -62,6 +54,7 @@ impl ChessGame {
         };
         new_game
     }
+
     fn play_move(&mut self, action: Action, ctx: &mut Context) {
         self.gui_state
             .update_last_played_move(Some(action), self.board_state.color_turn);

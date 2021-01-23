@@ -1,5 +1,6 @@
 use crate::PieceType;
 use ggez::{graphics::Image, Context};
+use std::{env, path::PathBuf};
 
 pub struct PieceSetImages {
     pawn: Image,
@@ -46,5 +47,15 @@ pub fn load_black_piece_set(ctx: &mut Context) -> PieceSetImages {
         rook: Image::new(ctx, "/black_rook.png").unwrap(),
         queen: Image::new(ctx, "/black_queen.png").unwrap(),
         king: Image::new(ctx, "/black_king.png").unwrap(),
+    }
+}
+
+pub fn get_resource_path() -> PathBuf {
+    if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
+        let mut path = PathBuf::from(manifest_dir);
+        path.push("resources");
+        path
+    } else {
+        PathBuf::from("./resources")
     }
 }
