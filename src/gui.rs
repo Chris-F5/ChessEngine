@@ -2,13 +2,13 @@ use crate::{
     find_legal_actions, Action, ActionType, BoardPosition, BoardState, Piece, PieceColor,
     PieceSetImages,
 };
-use dialog::DialogBox;
 use ggez::{
     graphics,
     graphics::Rect,
     nalgebra::{Point2, Vector2},
     Context,
 };
+use msgbox::IconType;
 
 const PIECE_SCALE: f32 = 0.9;
 const PIECE_SIZE: f32 = PIECE_SCALE * BOARD_POS_SIZE;
@@ -337,20 +337,14 @@ impl PlayerAction {
 }
 
 pub fn show_player_wins_message() {
-    dialog::Message::new("Congratulations - You Win!")
-        .title("You Win")
-        .show()
-        .expect("Could not display dialog box");
+    msgbox::create("You Win", "Congratulations - You Win!", IconType::Info)
+        .expect("Error creating message box");
 }
 pub fn show_computer_wins_message() {
-    dialog::Message::new("Computer Won. :(")
-        .title("Computer Won")
-        .show()
-        .expect("Could not display dialog box");
+    msgbox::create("Computer Won", "The computer won.", IconType::Info)
+        .expect("Error creating message box");
 }
 pub fn show_draw_message() {
-    dialog::Message::new("You drew with the computer.")
-        .title("Draw")
-        .show()
-        .expect("Could not display dialog box");
+    msgbox::create("Draw", "You drew with the computer.", IconType::Info)
+        .expect("Error creating message box");
 }
