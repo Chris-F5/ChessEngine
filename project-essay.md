@@ -3,9 +3,9 @@
 ## Overview
 * [Why I will make a chess engine](#why-i-will-make-a-chess-engine)
 * [Picking a language](#picking-a-language)
-	- [C#](#c\#)
-	- [C++](#c++)
-	- [Rust](#rust)
+	- C#
+	- C++
+	- Rust
 * [Board state representation](#board-state-representation)
 * [Graphical User Interface](#graphical-user-interface)
 * [Minimax](#minimax)
