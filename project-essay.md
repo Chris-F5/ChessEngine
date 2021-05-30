@@ -2,6 +2,7 @@
 
 ## Overview
 * [Why I will make a chess engine](#why-i-will-make-a-chess-engine)
+* [Program Overview](#program-overview)
 * [Picking a language](#picking-a-language)
 	- C#
 	- C++
@@ -21,6 +22,16 @@ Chess is a game complex enough that no strategy has been found that guarantees t
 In addition, chess has always been of interest to computer scientists because creating a chess playing program proves the ability of a computer to make decisions of its own.
 
 "Although perhaps of no practical importance, the question is of theoretical interest, and it is hoped that a satisfactory solution of this problem will act as a wedge in attacking other problems of a similar nature and of greater significance." - [Philosophical Magazine, Ser.7, Vol. 41, No. 314 - March 1950 - Programming a Computer for Playing Chess by Claude E. Shannon](https://www.pi.infn.it/~carosi/chess/shannon.txt).
+
+## Program Overview
+
+### Graphical User Interface
+
+The programs graphical user interface enables the user to input their desired moves into a graphical representation of the board. The images for the pieces and the board were found under the creative commons licence. To play a move, the user clicks on the piece they want to move, then that piece and all the locations it can move to are highlighted. Now the user can click on where they want to move their selected piece to.
+
+### Picking the best move
+
+After a move has been entered into the GUI, a command containing the new board state is send to the move finding thread. Then, the move finding thread creates a list of the possible moves it could play. The board states that are the outcome of these moves are referred to as the children of the original board state. The move that is eventually chosen will be the move that results in the board state of the highest score. For any given board state, if it is the computers turn to move then the score will be equal to the greatest of the scores of the board states children because the computer will pick moves that are favourable for itself, if it is the users turn to move then the score will be equal to the smallest of the scores of the board states children because the user will pick moves that are bad for the computer. This iteration must eventually end, so after 3-7 moves the board states score is determined by an evaluation function which considers material on the board and the location of this material.
 
 ## Picking a language
 
@@ -68,7 +79,7 @@ My initial idea for finding all legal moves was to iterate over every board posi
 
 ## Minimax improvements
 
-My first implementation of the minimax algorithm could only search to a depth of 4 without taking more than a few seconds. To increase this, I implemented [alpha beta pruning](http://www.chilton-computing.org.uk/acl/literature/books/gamesplaying/p004.htm#index01). This significantly improved the performance of the program and enabled me to easily reach a depth of 5. Sorting the order in which nodes on the search tree were evaluated could increase the benefit of alpha beta pruning further - so I wrote a "[quick evaluate function](https://github.com/Chris-F5/ChessEngine/blob/c839f11fb86962aa9d55e15b181c1c6953ffc6d0/src/best_action_finder/evaluator.rs#L82-L86)" which would be run for all board positions searched before the full evaluation was run. Then, the result of the quick evaluation would be used to sort the order in which the the full evaluation was run (best moves first). I underestimated the huge increase in performance this resulted in. Because my quick evaluate was so similar to my full evaluate, the number of board positions considered was almost square-rooted!
+My first implementation of the minimax algorithm could only search to a depth of 4 without taking more than a few seconds. To increase this, I implemented [alpha beta pruning](http://www.chilton-computing.org.uk/acl/literature/books/gamesplaying/p004.htm#index01). This significantly improved the performance of the program and enabled me to easily reach a depth of 5. Sorting the order in which nodes on the search tree were evaluated could increase the benefit of alpha beta pruning further - so I wrote a "[quick evaluate function](https://github.com/Chris-F5/ChessEngine/blob/c839f11fb86962aa9d55e15b181c1c6953ffc6d0/src/best_action_finder/evaluator.rs#L82-L86)" which would be run for all board positions searched before the full evaluation was run. Then, the result of the quick evaluation would be used to sort the order in which the full evaluation was run (best moves first). I underestimated the huge increase in performance this resulted in. Because my quick evaluate was so similar to my full evaluate, the number of board positions considered was almost square-rooted!
 
 Another improvement I wanted to make was to search what initially seemed like better moves to a greater depth. This was implemented by selecting the first few board states in the lists that have been sorted by the quick evaluate and increasing their depth. This improvement did not change the ability of the chess engine significantly and after some experimentation, I found that using it to search to a max depth of 7 (only one more than was being searched previously) was best.
 
