@@ -19,3 +19,8 @@ The program displays a chess board and allows the user to input moves as white. 
 - No draw by repetition
 - No fifty-move rule
 - No draw by insufficient mating material
+
+## Build Process
+```
+rustup run 1.47.0 cargo run
+```
